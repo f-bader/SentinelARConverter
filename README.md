@@ -12,7 +12,7 @@ Install-Module SentinelARConverter
 
 You can convert a Sentinel Analytics rule in the [YAML format](https://github.com/Azure/Azure-Sentinel/wiki/Query-Style-Guide) to an [Azure ARM template](https://learn.microsoft.com/en-us/azure/templates/microsoft.insights/alertrules?pivots=deployment-language-arm-template) or vice versa.
 
-For more information about this cmdlet, please refer to my blog post.
+For more information about this cmdlet, please [read my blog post](https://cloudbrothers.info/en/convert-sentinel-analytics-rules/).
 
 ### ARM to YAML
 
@@ -45,7 +45,7 @@ This will create a new file named `Azure_Sentinel_analytic_rule.json` without an
 
 
 ```PowerShell
-Get-Content -Filename "C:\Users\User\Downloads\Azure_Sentinel_analytic_rule.yaml" | Convert-SentinelARYamlToArm -OutFile "C:\Users\User\Downloads\Azure_Sentinel_analytic_rule.json"
+Get-Content "C:\Users\User\Downloads\Azure_Sentinel_analytic_rule.yaml" | Convert-SentinelARYamlToArm -OutFile "C:\Users\User\Downloads\Azure_Sentinel_analytic_rule.json"
 ```
 
 In this case you can pipe the YAML content to the cmdlet, but you must define a output file if it should be written to disk.
