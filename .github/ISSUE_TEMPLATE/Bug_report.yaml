@@ -28,8 +28,8 @@ body:
     label: Expected behavior
     render: console
     placeholder: |
-      PS> 2 + 2
-      4
+      PS>  Convert-SentinelARArmToYaml -Filename "C:\Temp\MyRule.json" -OutFile "C:\Temp\MyRule.yaml"
+      I expected this line to create Myrule.yaml based on Myrule.json.
   validations:
     required: true
 - type: textarea
@@ -37,8 +37,13 @@ body:
     label: Actual behavior
     render: console
     placeholder: |
-      PS> 2 + 2
-      5
+      PS> Convert-SentinelARArmToYaml -Filename "C:\Temp\MyRule.json" -OutFile "C:\Temp\MyRule.yaml"
+      Exception: /Users/user/.local/share/powershell/Modules/SentinelARConverter/1.1.2/public/Convert-SentinelARArmToYaml.ps1:60
+      Line |
+        60 |                  throw "File not found"
+           |                  ~~~~~~~~~~~~~~~~~~~~~~
+           | File not found
+      
   validations:
     required: true
 - type: textarea
