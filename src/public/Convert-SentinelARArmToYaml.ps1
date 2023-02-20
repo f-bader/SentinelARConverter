@@ -99,10 +99,10 @@ function Convert-SentinelARArmToYaml {
 
         # Use parsed pipeline data if no file was specified (default)
         if ($PsCmdlet.ParameterSetName -eq "Pipeline") {
-            $AnalyticsRuleTemplate = $FullARM | ConvertFrom-Json -Depth 100 -Verbose
+            $AnalyticsRuleTemplate = $FullARM | ConvertFrom-Json -Verbose
         } else {
             Write-Verbose "Read file `"$Filename`""
-            $AnalyticsRuleTemplate = Get-Content $Filename | ConvertFrom-Json -Depth 100 -Verbose
+            $AnalyticsRuleTemplate = Get-Content $Filename | ConvertFrom-Json -Verbose
         }
 
         if ($AnalyticsRuleTemplate.resources.Count -ne 1) {
@@ -142,7 +142,7 @@ function Convert-SentinelARArmToYaml {
         }
 
         # Convert the JSON to a PowerShell object
-        $AnalyticsRule = $JSON | ConvertFrom-Json -Depth 100
+        $AnalyticsRule = $JSON | ConvertFrom-Json
 
         # Remove empty properties
         $AnalyticsRuleCleaned = @{}
@@ -157,7 +157,7 @@ function Convert-SentinelARArmToYaml {
 
         # Write the YAML to a file or return the YAML
         if ($OutFile -or $UseOriginalFilename) {
-            $AnalyticsRuleYAML | Out-File $OutFile -Force
+            $AnalyticsRuleYAML | Out-File $OutFile -Force -Encoding utf8
             Write-Verbose "Output written to file: `"$OutFile`""
         } else {
             return $AnalyticsRuleYAML

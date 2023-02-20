@@ -5,7 +5,7 @@ $publicScripts = @(Get-ChildItem -Path "$PSScriptRoot\public" -Recurse -Filter "
 foreach ($script in ($privateScripts + $publicScripts)) {
     Write-Verbose $script
     try {
-        . $script
+        . $script.FullName
         Write-Verbose -Message ("Imported function {0}" -f $script)
     } catch {
         Write-Error -Message ("Failed to import function {0}: {1}" -f $script, $_)

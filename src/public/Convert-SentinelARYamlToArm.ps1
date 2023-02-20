@@ -207,7 +207,10 @@ function Convert-SentinelARYamlToArm {
         $Result = $Template.Replace("<PROPERTIES>", $JSON)
         $Result = $Result.Replace("<TEMPLATEID>", $analyticRule.id)
         $Result = $Result.Replace("<RULEKIND>", $ScheduleKind)
-        $Result = $Result | ConvertFrom-Json | ConvertTo-Json -Depth 99
+        if ( $PSVersionTable.PSVersion -ge [version]'7.0.0' ) {
+            # Beautify in PowerShell 7 and above
+            $Result = $Result | ConvertFrom-Json | ConvertTo-Json -Depth 99
+        }
 
         if ($OutFile -or $UseOriginalFilename) {
             $Result | Out-File $OutFile -Force
