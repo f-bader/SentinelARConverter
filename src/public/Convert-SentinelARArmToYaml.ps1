@@ -97,6 +97,23 @@ function Convert-SentinelARArmToYaml {
             "enabled"
         )
 
+        $DefaultSortOrderInYAML = @(
+            "id",
+            "name",
+            "version",
+            "kind",
+            "description",
+            "severity",
+            "requiredDataConnectors",
+            "queryFrequency",
+            "queryPeriod",
+            "triggerOperator",
+            "triggerThreshold",
+            "tactics",
+            "relevantTechniques",
+            "query"
+        )
+
         # Use parsed pipeline data if no file was specified (default)
         if ($PsCmdlet.ParameterSetName -eq "Pipeline") {
             $AnalyticsRuleTemplate = $FullARM | ConvertFrom-Json -Verbose
@@ -144,11 +161,16 @@ function Convert-SentinelARArmToYaml {
         # Convert the JSON to a PowerShell object
         $AnalyticsRule = $JSON | ConvertFrom-Json
 
-        # Remove empty properties
-        $AnalyticsRuleCleaned = @{}
-        foreach ($Property in $AnalyticsRule.PSObject.Properties.Name) {
-            if ( -not [string]::IsNullOrWhiteSpace($AnalyticsRule.$Property) -or ( $AnalyticsRule.$Property -is [array] -and ($AnalyticsRule.$Property.Count -gt 0) ) ) {
-                $AnalyticsRuleCleaned.Add($Property, $AnalyticsRule.$Property)
+        # Use custom sort order of YAML
+        $ErrorActionPreference = "SilentlyContinue"
+        $AnalyticsRuleKeys = $AnalyticsRule.PSObject.Properties.Name | Sort-Object { $i = $DefaultSortOrderInYAML.IndexOf($_) ; if ( $i -eq -1 ) { 100 } else { $i } }
+        $ErrorActionPreference = "Continue"
+        # Create ordered hashtable
+        $AnalyticsRuleCleaned = [ordered]@{}
+        foreach ($PropertyName in $AnalyticsRuleKeys) {
+            # Remove empty properties
+            if ( -not [string]::IsNullOrWhiteSpace($AnalyticsRule.$PropertyName) -or ( $AnalyticsRule.$PropertyName -is [array] -and ($AnalyticsRule.$PropertyName.Count -gt 0) ) ) {
+                $AnalyticsRuleCleaned.Add($PropertyName, $AnalyticsRule.$PropertyName)
             }
         }
 
@@ -167,8 +189,8 @@ function Convert-SentinelARArmToYaml {
 # SIG # Begin signature block
 # MIIoBAYJKoZIhvcNAQcCoIIn9TCCJ/ECAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCAILhbsqC5wwx5x
-# zlVmlm1ijiUB/i8tOXSc4oErnAE3DaCCIQcwggWNMIIEdaADAgECAhAOmxiO+dAt
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCDWl995V+YxF5BG
+# 7eLZr9vCFLgG8oioLX3ivwwAXU8w6aCCIQcwggWNMIIEdaADAgECAhAOmxiO+dAt
 # 5+/bUOIIQBhaMA0GCSqGSIb3DQEBDAUAMGUxCzAJBgNVBAYTAlVTMRUwEwYDVQQK
 # EwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5jb20xJDAiBgNV
 # BAMTG0RpZ2lDZXJ0IEFzc3VyZWQgSUQgUm9vdCBDQTAeFw0yMjA4MDEwMDAwMDBa
@@ -350,33 +372,33 @@ function Convert-SentinelARArmToYaml {
 # IDIwMjEgQ0ExAhAKgjCQR6s2I8rDH7I9rOuaMA0GCWCGSAFlAwQCAQUAoIGEMBgG
 # CisGAQQBgjcCAQwxCjAIoAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcC
 # AQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwLwYJKoZIhvcNAQkEMSIE
-# IPY80uy0qyh/sL6Mvdn8dWvRSc8cyKjGDLf3vson8wzbMA0GCSqGSIb3DQEBAQUA
-# BIICAB6yk3J0dQGnzoYIWQsj8htDZP+HuLEVLd9/u4HLPn6ExBNL/nSimtgEdmBI
-# xf6c0hbmY3CBkjOrMTI1eDZyROU5bJtnhnRlm0d9upWJA3b6r+xJVd4/EVaqWLlg
-# EkeVfUCGdy8e2I+yv60mcC8jhiZGsgk6fmawz6qXqTYSdzjOobDn4pLI1TjKn4J8
-# 6KDtHRlcEGc7SbqTklTbNy7j9N3GoHzbACdUjrHL/o/LyzFqLJsxBDk9iDdEvEHG
-# nV7MniX3kdfrqbJLnlnZBRiv9rnNTIKy0TM0mEvW689W4PaYXHjACm+nDC9EfwK8
-# Ohx2f5/6hH37zUc7yGrKmjzdbnDU8m+LoESyBFmTmZ+FqC7EpPojTHPjH9pARfGJ
-# eh2xWB1QEI/MU6xnRa2mwkFxlq7zWK4MxjUCA9XYK64c5DaqEmhq1zz4UXKQvRka
-# g8w+ipZCFK9YrRRpgXSccYXvvxJUqJ7hHwOjYngnitcFxogPqVkjcU76WL3RuVgo
-# KvrOP3lUHfg+HspsTACRABRo8khIEbmj+J43eY70RXdJ+EenYEiYhHi19B7QsDi7
-# EbNK7LghH7+l6DcAJxl0yyJfymW7C8QBU2FYDtY8pM0VHqZMmwurl+NqDUzAE9Ny
-# xLgbgxr/aswm5U5BWOSknM+ffTKG2W8pOuR+t7ZFnT82CzGloYIDIDCCAxwGCSqG
+# IJ/p400lC0bbQaAz0jl4bAc7lmSipbeCH29tmAylL915MA0GCSqGSIb3DQEBAQUA
+# BIICAJkgS7RCF+LUeaqsPPex+62Ly+B12tulR6bkjHa+aouwZMAqAkfmh7G26MsM
+# 4jaDZyYqfIygNyIwHvvnURM9ffmTvWg0O4agaqCFpjantFQohOcOr2ON+lO/7t+o
+# anPrt4z4g8g7w7JnI5Yx2n4J6HDH45/Bt10wswXhTaeezO63btviPagZMkYgIekG
+# VQdKYrNeouWzEwuxWEl1ReyY/UN3HlgV2mCwywJdh7dmtdlZFn5/btaIrl2xQOwM
+# nLMdJ3TdegIFAdxYWrF5cG44KZNsn4LxFW62xripIk+RVwftKbJcZK8CkjTaYpZR
+# iCtmtU8gOVDSOtFsRxsk1dTXoERFiGH8BxzAiwdrbvZlS0ZRgV0WM65mgc7RjdP6
+# y/1FBz/tVf3mmgdWmSMnYYCxdjlh79gXVEc3xTpUd7koMi4Boxgd+/g1gvi0syG3
+# 1ZUBPfUt+Tpsz8U2Xi8vpvhghuJ5PaulfhXKhuuUWZHCbYgVG6lNVyMnleSuwUfp
+# N548nHIp9OSBkx8BDhllCmYAWzkS9ZnyAKAwdXe5ElAmgm2qh2Y9YX4minolUxY7
+# 8WhQzcI+LHtJF0znLP5Xrcwim6qRNLtlJd9PaOEIqFWS9VrsvTal7Q9wwkMugTmX
+# pTePjUxlOzU9awYFWVSUDKUvstRobJQWmTEaZR/3dZZFGvNYoYIDIDCCAxwGCSqG
 # SIb3DQEJBjGCAw0wggMJAgEBMHcwYzELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRp
 # Z2lDZXJ0LCBJbmMuMTswOQYDVQQDEzJEaWdpQ2VydCBUcnVzdGVkIEc0IFJTQTQw
 # OTYgU0hBMjU2IFRpbWVTdGFtcGluZyBDQQIQDE1pckuU+jwqSj0pB4A9WjANBglg
 # hkgBZQMEAgEFAKBpMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcN
-# AQkFMQ8XDTIzMDIyMDIwMzAzNFowLwYJKoZIhvcNAQkEMSIEIEvZ2ZqhDXXoNDJY
-# HangmFlCfWUkazooXA8XfDtidZQKMA0GCSqGSIb3DQEBAQUABIICAMTJJ+O9k8K/
-# ZFx7fhQwp351p7IPDMMhS+flBPKXb2qmGDsimChI/s5YmmJN3uKTBpI8Gy/i0Jfw
-# gHlaqAPMAwXFB80ZVpVFRtUBoHCWj9/ZfWE74pCSN6lKaNnSH/YHqnwhCtZeAv7f
-# 6HPwdV0VLWrt4X8mqe0QyR7gEF/LaLpivydvK7dsg1CtmC7tWpVAoaz3YAGzAOi5
-# R8x9Zt1Ma+01i43/Ii4K++2OtnrcR330b2pYihQHvBKmhYcstKkYHMVxxwgwSpoc
-# 7gVnJe0WDo7K6eXW1bGu3ji8yJblcbrCNoLqeGKiyPAUjMeY4Zd6v1fCb5IuCkrf
-# OoiXJs3AzmiLq+UzlB6G9v+VLOZbfMrxu+AbFWJcL9s5e17v3SNc7mR1DQzYm1md
-# h7OnFrwmLT0TItzz8MuhtWPPYl9dinrILYGWghjC4kv3FeyCLqLsfdaCfO09TXAC
-# MsVj0kc6uQv2RGRsm1ht1PsORQQefMsOQkCzdjVtkx10RXEwsAxXPOsV/MhAwWK5
-# VoP2rbQ922EPwNVMWd9B29JtUyGIf1yHvwu25uv0km6wDf7W8grgLuoKpqKWn/Pq
-# l5NCsD4X4Sts8FOI0rULaRlukkgmo8i74b1ygR9lpZv3+k3/LYj0kBdb5bUyUxp/
-# gs/14X2ZfD19eYlpy0J2retTAGuvCjzd
+# AQkFMQ8XDTIzMDIyMjE3MjMxOFowLwYJKoZIhvcNAQkEMSIEINhuCk3VUMGdhGNU
+# yUbMiUdBc2DznOvHkYM9BjTEODekMA0GCSqGSIb3DQEBAQUABIICABaM2ls4Elyi
+# k9M/7ztjkF1NU36FF++wft/FcQRYGGLOrwtQh5puWHGdhxSKRbudK2jYGY1q4gQh
+# LxX61z9Hnck7DZt3qXvvXRJPswIpw7+0urqM0M57r0n1JBINCXF9pvr6GuGkHEqU
+# RL2FzynDvK5gEebY6kcDh/Uxy6yBiVABtwRbkhfmvPqPtlH9yZ3vE7yRzph3D1oW
+# JdL/wskZhBkgUOQlLHZLACgzMLHDtdk8RaMGvTPdMC7Ox7I1Rsmjfk1gMtw4UC64
+# 3EZn5XFMXLUNE++FP7cfepYAYgO0KDSvA+aVttIjOuiWK4GWz1bFQFmLwPr/JC+P
+# lPIP/DnhUTnFhfre1EH6HqktwxTd2fuaku+kx2hWbAg+Aq3POX8K3CpTeDQAIeUF
+# 5U0alOkrvtUPQy0zbn/CLzIhf1Y6ECdAvSfKsSUB8mWSNOfFz3DGadbz6o+mH6Vc
+# Cco+d5D+ohm0sEr4BIYrNbXqy98xXZN7rD18J+y32bpJkfd2/w4eoV5abo0MVaKk
+# nqde6EgWquYWYhGXcjLLWdLDHWTZNFQ/1c6PU3eWBBdDGbLVltEOCKWl9UbhjBs6
+# ysZsgyzC/conqFwNj8yr/EOGe7bYLrv7rMkJVweBlogYkHRsMTcFotD9H4hWReXu
+# 9QztptDPLjxd/7TmBOI43CGt972oYt/J
 # SIG # End signature block

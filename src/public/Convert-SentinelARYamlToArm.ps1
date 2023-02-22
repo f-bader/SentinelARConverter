@@ -154,13 +154,7 @@ function Convert-SentinelARYamlToArm {
         }
 
         $ARMTemplate = [ordered]@{}
-
-        # Currently this has no effect
-        $ErrorActionPreference = "SilentlyContinue"
-        $analyticRuleKeys = $analyticRule.Keys | Sort-Object { $DefaultSortOrderInArmTemplate.IndexOf($_) }
-        $ErrorActionPreference = "Continue"
-
-        foreach ($Item in $analyticRuleKeys) {
+        foreach ($Item in $analyticRule.Keys) {
             # Skip certain values, because they are not needed in the ARM template
             if ( $Item -notin $SkipYamlValues ) {
                 # Change the name of the value if needed
@@ -197,8 +191,17 @@ function Convert-SentinelARYamlToArm {
             }
         }
 
+        # Sort by custom order
+        $ARMTemplateOrdered = [ordered]@{}
+        $ErrorActionPreference = "SilentlyContinue"
+        $AnalyticsRuleKeys = $ARMTemplate.Keys | Sort-Object { $i = $DefaultSortOrderInArmTemplate.IndexOf($_) ; if ( $i -eq -1 ) { 100 } else { $i } }
+        $ErrorActionPreference = "Continue"
+        foreach ($PropertyName in $AnalyticsRuleKeys) {
+                $ARMTemplateOrdered.Add($PropertyName, $ARMTemplate.$PropertyName)
+        }
+
         # Convert hashtable to JSON
-        $JSON = $ARMTemplate | ConvertTo-Json -Depth 99
+        $JSON = $ARMTemplateOrdered | ConvertTo-Json -Depth 99
         # Use ISO8601 format for timespan values
         $JSON = $JSON -replace '"([0-9]+)m"', '"PT$1M"' -replace '"([0-9]+)h"', '"PT$1H"' -replace '"([0-9]+)d"', '"P$1D"'
 
@@ -223,8 +226,8 @@ function Convert-SentinelARYamlToArm {
 # SIG # Begin signature block
 # MIIoBAYJKoZIhvcNAQcCoIIn9TCCJ/ECAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCCg1OItrEK0pw6h
-# m4jaRpsQXxActF4tgc8Xmv2K8qMjaKCCIQcwggWNMIIEdaADAgECAhAOmxiO+dAt
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCDRWy6AkaWDpC/8
+# 5Y7fdihksPAoC5A0lZTXy0v0Ue/IpKCCIQcwggWNMIIEdaADAgECAhAOmxiO+dAt
 # 5+/bUOIIQBhaMA0GCSqGSIb3DQEBDAUAMGUxCzAJBgNVBAYTAlVTMRUwEwYDVQQK
 # EwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5jb20xJDAiBgNV
 # BAMTG0RpZ2lDZXJ0IEFzc3VyZWQgSUQgUm9vdCBDQTAeFw0yMjA4MDEwMDAwMDBa
@@ -406,33 +409,33 @@ function Convert-SentinelARYamlToArm {
 # IDIwMjEgQ0ExAhAKgjCQR6s2I8rDH7I9rOuaMA0GCWCGSAFlAwQCAQUAoIGEMBgG
 # CisGAQQBgjcCAQwxCjAIoAKAAKECgAAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcC
 # AQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwLwYJKoZIhvcNAQkEMSIE
-# IJ6fyj1H7ov4TbEuYQO81HZGZj81gUXtLTuuxY09F2WvMA0GCSqGSIb3DQEBAQUA
-# BIICAC+8SIYVL2i+TppqOr6bR1sPntiHLHM2XUrRLD0EHFM8O8GEaBge+NVaEY9Z
-# OnizRtdoH8L/u4t2O+lyP7KTu+sFnwT6x254UoAa1JfbyL1ZjMR4uaieD8V8WR2Y
-# FAQfjOZBLVyBGk+47EY6mJUNWvrNQ22NoHrLK/fIpsDlyY3ILsLlwOiY7KONVcIO
-# W8Navu/GE+3zWJhHRckLfvvLv3w7ow2PumBWKHCcWiLS2K4DbZ8vppE3vzB8UCKV
-# 1q8PSwFzEGcDjTUosrYzcRxJ98aL2WH5ijSYAQW2L4QL6w0aI2/g66SaNkEu4iP3
-# WwhWV/0SWidW/MznFD10aBcp1yRZiXdtCBoHAAG31TOUbmrDEgxuhHHB9SeGQl9p
-# JiIAHXXKOdkuedGVBSoQ08/e4KQWB0DXLs23AFed+hliapVbUA2CQ3BliNebKsoE
-# ditR+pGoam2cCq4JwTiKIM9ABmuvca6zIL3IQn+Jwg6kifRV2GNKSHx+rTYKA4HD
-# pFMoaLx832o0UsGKeX1SfcDH3fLxX7B17xoi09Dc9JPzlHoI5yFbEHQBWEuLRo+P
-# 8uFs5sFed17uSdwuzGgB7fzzUeG2OaeRrWY/eRzXL13oDFP97S9oKb0amSc7xpnn
-# 66MkT92D8+PS2VFW8n7q+ZeMx/yePwev56tJ4RVha+fpz8+doYIDIDCCAxwGCSqG
+# IHFyHr/AoiRuRmP+2qPtBPEbIaC5igTziCcaR8ROzWQzMA0GCSqGSIb3DQEBAQUA
+# BIICAH5nTZyyKjNH/pbwT6jP4IadIpfDO9nRkaPh2JzIgjxKvVAWiyzf0AoXYzhZ
+# EYB9ohm9INB5PGmMeGxvX/x/pQxL3lZErfPtPMsmyDf6drKWWxWg1Qd0Ka5APIbQ
+# aMDRWsRaUX5nzcbWdEkQvvKSAfMEb0mbsq5Sb4xO1++wGhkNvt0wcq4m2qo3MwCA
+# qXozgFLbKoGOcOD+POMpe4hVAjM70nNTmRVLiIX+vziJFq4hkGfL1l2CCX/HNkOJ
+# 0omtCp9AL8TWqkRWSmeRiXRd3kQYewi/MkWybFoIpunmMi+eFCIIjv5BvRhVYRpF
+# FRP7d7hZQlSj+0qpp8YEu4kGw8jiWdh1olNb06bcG9lmvtthd5nuF+U2hEmuJhQq
+# 6qQeQ0aQKDSGTUoIxZdZncZLF7Boo047QhKbcNrnzugUP1IoqZR7PTSoLWx5bg90
+# Acci9EVpCWaeBo5GiHXekD9rIKMXBc6C9tQTopMFPCgmE9i3zf8STEZXwPcxGvZe
+# yhnRwWvfGf0BNQaNBtkoCtySSawzkezGcIH8zcjIM/897VS8BxNcUGBO24OKdptn
+# JEBj8sdoZUphvkm1hdPidXmwiD2H9bg16Smi2TzeiIc0GiZAFp+bq0AlA64BwGYm
+# tEbrHrBj8/ZF1aj+NELSaaoRcZbWTQnYxYYcDETCNaK1yasAoYIDIDCCAxwGCSqG
 # SIb3DQEJBjGCAw0wggMJAgEBMHcwYzELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDkRp
 # Z2lDZXJ0LCBJbmMuMTswOQYDVQQDEzJEaWdpQ2VydCBUcnVzdGVkIEc0IFJTQTQw
 # OTYgU0hBMjU2IFRpbWVTdGFtcGluZyBDQQIQDE1pckuU+jwqSj0pB4A9WjANBglg
 # hkgBZQMEAgEFAKBpMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcN
-# AQkFMQ8XDTIzMDIyMDIwMzAzNVowLwYJKoZIhvcNAQkEMSIEIPzJK6t10rowjDVM
-# uuMOxeNkYkc5WTDWJlgnlmgrmciCMA0GCSqGSIb3DQEBAQUABIICAEj4mrDZPjRY
-# NwHLYTmNEKcDfivgh0KJUoyfj8RcBUxcmSk1DN6pvbatDPQwPbj2IcowUnHgWodB
-# qpq6d22HjharqR9dbvcZUamNqDXh322IgyCIdTwquTfCKb+20eOYj+PHwJFaM0ic
-# Ubph3VL9LLyPjkBs6xgzElXIcwgABZi8v6Z0H6BiGtHIz2dhuGyAu/NdserdrztZ
-# DOy4Z43wklym0GjQKZgj9loqhu/U6t+2otnNXXh4Pfh3zxK44A2282RE7Ue14KwB
-# sEZwSiIf1NGpCoNt8R9YBTg4+oUN7ciibk63YUpsIVlny6wyUM/08l4/B35CBW/x
-# DZelZBpuLPYaf3+17i5EUvDmuPXmnOKvHTcESEBM9G2GdXehJZRRn4zz6E+2Rij3
-# 8aZhMESI3IMEP0WDqp1aW7fepPY/oZfWv2Noa9FxdsXXM1ZWPcbmBTsr2tcZ+X/e
-# fbBfgJqgJ5lKIchYXuAxOSjbq7hrTtJ8GwtdWLGF4dSakf1DoJALhQ7xZiLbuWDn
-# ugjI3t0QaKXfYnsjuZbJUF22Klm5FJUvU+ic5fUVSqAPVDLbLdJK8GJxGKi1fz7b
-# TUYE3/CiEDMUGpMhrXKvylLz/+NeclYQjxBjSpcbo9Qiyyl6HqTeO7Marb09GbX5
-# tIpKdGVq5Wir2C9POMBj3NR3jXeaOp0E
+# AQkFMQ8XDTIzMDIyMjE3MjMxOVowLwYJKoZIhvcNAQkEMSIEIPpq2H1EPbFIC9lb
+# 3ugwNrUVbxZUlW7mEx7LFrrX7TQPMA0GCSqGSIb3DQEBAQUABIICALfd8cv7h+1O
+# 8vT//IKI4k8OQjA/K8msW+vjlHyzYS1/k5YzGcBmJSZFOcOVohoHsLfyxPXCrLBc
+# 42AxfGpex1OehOAx/STQ3IXlhOZWojUWhgeADL330i+YEgOSYm4//cNjiiusfMs5
+# +r3HKS8+egOd9PB7QVZf4o877KMl9+C8xMia94qge7p0NXL416sEXJ9i0+UEdr3h
+# 1TnllkpxeMahtzq14/b1CVkMuLxxEzO2fj17kogFB1audGG+y9vg1vHim9Qqmk91
+# WnSE/LscJmvVXXoFUnTDIxMbclWqCnyVv9jhFSD6sUuclbNgmVaqobsvvZRPeUEY
+# 6hMYS2QLeJY9dBbjAijlKab+2MQgOBnDv6ni5nb5hliPs8yEL2pwD8OiD53tUF9W
+# ZlM0InWPmTH2y1cdQx7bq67x0ZT05RIpYTQFnYhm1NaFg7mYdxSc/1wgkvSHf9PM
+# pq3LsQiRZWPx+RS0OT431JFP2ZmLGIrbNBuw+icV2TGv+Ebc1RvuI2V/pbjA7nuT
+# zUHQlctdizwa/fpH2r1U7twsA+FxaadrI1mHKlXATLxXhnFSqzZWBE6BONBxhBZh
+# r9PKcbbD7L4icpiPagJf/5lnOSEhzlQerm91k8t5xd/cJWLW0hAlS6JZj9kVUHtT
+# TPPM/bNM4yQVWUGBeu7mYY96o0WnDMLt
 # SIG # End signature block
