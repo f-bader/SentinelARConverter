@@ -167,10 +167,10 @@ function Convert-SentinelARArmToYaml {
         $ErrorActionPreference = "Continue"
         # Create ordered hashtable
         $AnalyticsRuleCleaned = [ordered]@{}
-        foreach ($Property in $AnalyticsRuleKeys) {
+        foreach ($PropertyName in $AnalyticsRuleKeys) {
             # Remove empty properties
-            if ( -not [string]::IsNullOrWhiteSpace($AnalyticsRule.$Property) -or ( $AnalyticsRule.$Property -is [array] -and ($AnalyticsRule.$Property.Count -gt 0) ) ) {
-                $AnalyticsRuleCleaned.Add($Property, $AnalyticsRule.$Property)
+            if ( -not [string]::IsNullOrWhiteSpace($AnalyticsRule.$PropertyName) -or ( $AnalyticsRule.$PropertyName -is [array] -and ($AnalyticsRule.$PropertyName.Count -gt 0) ) ) {
+                $AnalyticsRuleCleaned.Add($PropertyName, $AnalyticsRule.$PropertyName)
             }
         }
 

@@ -154,13 +154,7 @@ function Convert-SentinelARYamlToArm {
         }
 
         $ARMTemplate = [ordered]@{}
-
-        # Currently this has no effect
-        $ErrorActionPreference = "SilentlyContinue"
-        $analyticRuleKeys = $analyticRule.Keys | Sort-Object { $i = $DefaultSortOrderInYAML.IndexOf($_) ; if ( $i -eq -1 ) { 100 } else { $i } }
-        $ErrorActionPreference = "Continue"
-
-        foreach ($Item in $analyticRuleKeys) {
+        foreach ($Item in $analyticRule.Keys) {
             # Skip certain values, because they are not needed in the ARM template
             if ( $Item -notin $SkipYamlValues ) {
                 # Change the name of the value if needed
@@ -197,8 +191,17 @@ function Convert-SentinelARYamlToArm {
             }
         }
 
+        # Sort by custom order
+        $ARMTemplateOrdered = [ordered]@{}
+        $ErrorActionPreference = "SilentlyContinue"
+        $AnalyticsRuleKeys = $ARMTemplate.Keys | Sort-Object { $i = $DefaultSortOrderInArmTemplate.IndexOf($_) ; if ( $i -eq -1 ) { 100 } else { $i } }
+        $ErrorActionPreference = "Continue"
+        foreach ($PropertyName in $AnalyticsRuleKeys) {
+                $ARMTemplateOrdered.Add($PropertyName, $ARMTemplate.$PropertyName)
+        }
+
         # Convert hashtable to JSON
-        $JSON = $ARMTemplate | ConvertTo-Json -Depth 99
+        $JSON = $ARMTemplateOrdered | ConvertTo-Json -Depth 99
         # Use ISO8601 format for timespan values
         $JSON = $JSON -replace '"([0-9]+)m"', '"PT$1M"' -replace '"([0-9]+)h"', '"PT$1H"' -replace '"([0-9]+)d"', '"P$1D"'
 
