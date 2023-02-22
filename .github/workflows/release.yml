@@ -1,0 +1,27 @@
+name: release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: windows-2022
+
+    steps:
+      - uses: actions/checkout@v3
+        with:  
+          fetch-depth: 0
+
+      - name: Sign and publish
+        env:
+          NUGET_KEY: ${{ secrets.PS_GALLERY_KEY }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+          SIGNING_CERTIFICATE: ${{ secrets.SIGNING_CERTIFICATE }}
+        shell: pwsh
+        run: |
+          $certPath = Join-Path -Path $PSScriptRoot -ChildPath "code_signing.pfx"
+          Set-Content -Value $([System.Convert]::FromBase64String($env:SIGNING_CERTIFICATE)) -Path $certPath -AsByteStream
+          $cert = Import-PfxCertificate -FilePath $certPath -Password ($env:SIGNING_PASSWORD | ConvertTo-SecureString -AsPlainText -Force) -CertStoreLocation Cert:\CurrentUser\My
+          Get-ChildItem src -Recurse -Force -Filter *.ps* | Set-AuthenticodeSignature -Certificate $cert -TimestampServer 'http://timestamp.digitcert.com'
+          Copy-Item .\src\ -Recurse -Destination .\PSMDE\ -Force
+          Publish-Module -Path .\PSMDE\ -NuGetApiKey $env:NUGET_KEY
