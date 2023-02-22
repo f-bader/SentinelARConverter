@@ -23,5 +23,5 @@ jobs:
           Set-Content -Value $([System.Convert]::FromBase64String($env:SIGNING_CERTIFICATE)) -Path $certPath -AsByteStream
           $cert = Import-PfxCertificate -FilePath $certPath -Password ($env:SIGNING_PASSWORD | ConvertTo-SecureString -AsPlainText -Force) -CertStoreLocation Cert:\CurrentUser\My
           Get-ChildItem src -Recurse -Force -Filter *.ps* | Set-AuthenticodeSignature -Certificate $cert -TimestampServer 'http://timestamp.digitcert.com'
-          Copy-Item .\src\ -Recurse -Destination .\PSMDE\ -Force
-          Publish-Module -Path .\PSMDE\ -NuGetApiKey $env:NUGET_KEY
+          Copy-Item .\src\ -Recurse -Destination .\SentinelARConverter\ -Force
+          Publish-Module -Path .\SentinelARConverter\ -NuGetApiKey $env:NUGET_KEY
