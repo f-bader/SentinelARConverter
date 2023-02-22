@@ -97,6 +97,23 @@ function Convert-SentinelARArmToYaml {
             "enabled"
         )
 
+        $DefaultSortOrderInYAML = @(
+            "id",
+            "name",
+            "version",
+            "kind",
+            "description",
+            "severity",
+            "requiredDataConnectors",
+            "queryFrequency",
+            "queryPeriod",
+            "triggerOperator",
+            "triggerThreshold",
+            "tactics",
+            "relevantTechniques",
+            "query"
+        )
+
         # Use parsed pipeline data if no file was specified (default)
         if ($PsCmdlet.ParameterSetName -eq "Pipeline") {
             $AnalyticsRuleTemplate = $FullARM | ConvertFrom-Json -Verbose
@@ -144,9 +161,14 @@ function Convert-SentinelARArmToYaml {
         # Convert the JSON to a PowerShell object
         $AnalyticsRule = $JSON | ConvertFrom-Json
 
-        # Remove empty properties
-        $AnalyticsRuleCleaned = @{}
-        foreach ($Property in $AnalyticsRule.PSObject.Properties.Name) {
+        # Use custom sort order of YAML
+        $ErrorActionPreference = "SilentlyContinue"
+        $AnalyticsRuleKeys = $AnalyticsRule.PSObject.Properties.Name | Sort-Object { $i = $DefaultSortOrderInYAML.IndexOf($_) ; if ( $i -eq -1 ) { 100 } else { $i } }
+        $ErrorActionPreference = "Continue"
+        # Create ordered hashtable
+        $AnalyticsRuleCleaned = [ordered]@{}
+        foreach ($Property in $AnalyticsRuleKeys) {
+            # Remove empty properties
             if ( -not [string]::IsNullOrWhiteSpace($AnalyticsRule.$Property) -or ( $AnalyticsRule.$Property -is [array] -and ($AnalyticsRule.$Property.Count -gt 0) ) ) {
                 $AnalyticsRuleCleaned.Add($Property, $AnalyticsRule.$Property)
             }

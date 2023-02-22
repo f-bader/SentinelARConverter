@@ -157,7 +157,7 @@ function Convert-SentinelARYamlToArm {
 
         # Currently this has no effect
         $ErrorActionPreference = "SilentlyContinue"
-        $analyticRuleKeys = $analyticRule.Keys | Sort-Object { $DefaultSortOrderInArmTemplate.IndexOf($_) }
+        $analyticRuleKeys = $analyticRule.Keys | Sort-Object { $i = $DefaultSortOrderInYAML.IndexOf($_) ; if ( $i -eq -1 ) { 100 } else { $i } }
         $ErrorActionPreference = "Continue"
 
         foreach ($Item in $analyticRuleKeys) {
