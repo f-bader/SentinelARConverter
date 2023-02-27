@@ -19,6 +19,7 @@ jobs:
           SIGNING_CERTIFICATE: ${{ secrets.SIGNING_CERTIFICATE }}
         shell: pwsh
         run: |
+          Install-Module -Force -Name 'powershell-yaml'
           $certPath = Join-Path -Path $PSScriptRoot -ChildPath "code_signing.pfx"
           Set-Content -Value $([System.Convert]::FromBase64String($env:SIGNING_CERTIFICATE)) -Path $certPath -AsByteStream
           $cert = Import-PfxCertificate -FilePath $certPath -Password ($env:SIGNING_PASSWORD | ConvertTo-SecureString -AsPlainText -Force) -CertStoreLocation Cert:\CurrentUser\My
