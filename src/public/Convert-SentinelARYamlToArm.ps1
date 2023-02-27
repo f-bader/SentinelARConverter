@@ -50,7 +50,11 @@ function Convert-SentinelARYamlToArm {
 
         [Parameter(Mandatory = $true,
             ParameterSetName = 'UseOriginalFilename')]
-        [switch]$UseOriginalFilename
+        [switch]$UseOriginalFilename,
+
+        [ValidatePattern('^\d{4}-\d{2}-\d{2}(-preview)?$')]
+        [Parameter(Mandatory = $false)]
+        [string]$APIVersion = "2022-11-01"
     )
 
     begin {
@@ -100,12 +104,15 @@ function Convert-SentinelARYamlToArm {
             "name": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/<TEMPLATEID>')]",
             "type": "Microsoft.OperationalInsights/workspaces/providers/alertRules",
             "kind": "<RULEKIND>",
-            "apiVersion": "2022-10-01-preview",
+            "apiVersion": "<APIVERSION>",
             "properties": <PROPERTIES>
         }
     ]
 }
 '@
+
+        # Replace API version with specified version
+        $Template = $Template.Replace('<APIVERSION>',$APIVersion)
 
         # Only include the following keys in ARM template
         $DefaultSortOrderInArmTemplate = @(
