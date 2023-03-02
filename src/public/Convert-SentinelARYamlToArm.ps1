@@ -30,11 +30,13 @@ Convert-SentinelARYamlToArm -Filename "C:\Temp\MyRule.yaml" -OutFile "C:\Temp\My
 #>
 
 function Convert-SentinelARYamlToArm {
-    [CmdletBinding(DefaultParameterSetName = 'Pipeline')]
+    [CmdletBinding(DefaultParameterSetName = 'UseOriginalFilename')]
     param (
         [Parameter(Mandatory = $true,
+            Position = 0,
             ParameterSetName = 'Path')]
         [Parameter(Mandatory = $true,
+            Position = 0,
             ParameterSetName = 'UseOriginalFilename')]
         [string]$Filename,
 
@@ -51,8 +53,7 @@ function Convert-SentinelARYamlToArm {
             ParameterSetName = 'Pipeline')]
         [string]$OutFile,
 
-        [Parameter(Mandatory = $true,
-            ParameterSetName = 'UseOriginalFilename')]
+        [Parameter(ParameterSetName = 'UseOriginalFilename')]
         [switch]$UseOriginalFilename,
 
         [ValidatePattern('^\d{4}-\d{2}-\d{2}(-preview)?$')]
@@ -115,7 +116,7 @@ function Convert-SentinelARYamlToArm {
 '@
 
         # Replace API version with specified version
-        $Template = $Template.Replace('<APIVERSION>',$APIVersion)
+        $Template = $Template.Replace('<APIVERSION>', $APIVersion)
 
         # Only include the following keys in ARM template
         $DefaultSortOrderInArmTemplate = @(
@@ -207,7 +208,7 @@ function Convert-SentinelARYamlToArm {
         $AnalyticsRuleKeys = $ARMTemplate.Keys | Sort-Object { $i = $DefaultSortOrderInArmTemplate.IndexOf($_) ; if ( $i -eq -1 ) { 100 } else { $i } }
         $ErrorActionPreference = "Continue"
         foreach ($PropertyName in $AnalyticsRuleKeys) {
-                $ARMTemplateOrdered.Add($PropertyName, $ARMTemplate.$PropertyName)
+            $ARMTemplateOrdered.Add($PropertyName, $ARMTemplate.$PropertyName)
         }
 
         # Convert hashtable to JSON

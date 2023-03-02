@@ -27,11 +27,13 @@ Convert-SentinelARArmToYaml -Filename "C:\Temp\MyRule.json" -OutFile "C:\Temp\My
 #>
 
 function Convert-SentinelARArmToYaml {
-    [CmdletBinding(DefaultParameterSetName = 'Pipeline')]
+    [CmdletBinding(DefaultParameterSetName = 'UseOriginalFilename')]
     param (
         [Parameter(Mandatory = $true,
+            Position = 0,
             ParameterSetName = 'Path')]
         [Parameter(Mandatory = $true,
+            Position = 0,
             ParameterSetName = 'UseOriginalFilename')]
         [string]$Filename,
 
@@ -48,8 +50,7 @@ function Convert-SentinelARArmToYaml {
             ParameterSetName = 'Pipeline')]
         [string]$OutFile,
 
-        [Parameter(Mandatory = $true,
-            ParameterSetName = 'UseOriginalFilename')]
+        [Parameter(ParameterSetName = 'UseOriginalFilename')]
         [switch]$UseOriginalFilename
     )
 
