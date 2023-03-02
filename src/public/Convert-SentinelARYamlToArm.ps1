@@ -8,7 +8,7 @@ The YAML file can be provided as a file or as a string.
 The ARM template file can be saved to the same directory as the YAML file.
 
 .PARAMETER Filename
-The path to the YAML file
+The path to the Analytics Rule YAML file
 
 .PARAMETER Data
 The YAML data as a string
@@ -17,7 +17,19 @@ The YAML data as a string
 The path to the output ARM template file
 
 .PARAMETER UseOriginalFilename
-If set, the output file will be saved with the same name as the YAML file, but with a .json extension
+If set, the output file will be saved with the original filename of the ARM template file
+The extension will be replaced with .json
+
+.PARAMETER UseDisplayNameAsFilename
+If set, the output file will be saved with the display name of the Analytics Rule as filename
+The extension will be replaced with .json
+
+.PARAMETER UseIdAsFilename
+If set, the output file will be saved with the id of the Analytics Rule as filename
+The extension will be replaced with .json
+
+.PARAMETER APIVersion
+Set API version of the ARM template. Default is "2022-11-01"
 
 .EXAMPLE
 Convert-SentinelARYamlToArm -Filename "C:\Temp\MyRule.yaml" -OutFile "C:\Temp\MyRule.json"
@@ -27,12 +39,23 @@ Convert-SentinelARYamlToArm -Filename "C:\Temp\MyRule.yaml" -OutFile "C:\Temp\My
 #>
 
 function Convert-SentinelARYamlToArm {
-    [CmdletBinding(DefaultParameterSetName = 'Pipeline')]
+    [CmdletBinding(DefaultParameterSetName = 'StdOut')]
     param (
         [Parameter(Mandatory = $true,
+            Position = 0,
             ParameterSetName = 'Path')]
         [Parameter(Mandatory = $true,
+            Position = 0,
             ParameterSetName = 'UseOriginalFilename')]
+        [Parameter(Mandatory = $true,
+            Position = 0,
+            ParameterSetName = 'UseDisplayNameAsFilename')]
+        [Parameter(Mandatory = $true,
+            Position = 0,
+            ParameterSetName = 'UseIdAsFilename')]
+        [Parameter(Mandatory = $true,
+            Position = 0,
+            ParameterSetName = 'StdOut')]
         [string]$Filename,
 
         [Alias('Json')]
@@ -48,9 +71,14 @@ function Convert-SentinelARYamlToArm {
             ParameterSetName = 'Pipeline')]
         [string]$OutFile,
 
-        [Parameter(Mandatory = $true,
-            ParameterSetName = 'UseOriginalFilename')]
+        [Parameter(ParameterSetName = 'UseOriginalFilename')]
         [switch]$UseOriginalFilename,
+
+        [Parameter(ParameterSetName = 'UseDisplayNameAsFilename')]
+        [switch]$UseDisplayNameAsFilename,
+
+        [Parameter(ParameterSetName = 'UseIdAsFilename')]
+        [switch]$UseIdAsFilename,
 
         [ValidatePattern('^\d{4}-\d{2}-\d{2}(-preview)?$')]
         [Parameter(Mandatory = $false)]
@@ -58,14 +86,9 @@ function Convert-SentinelARYamlToArm {
     )
 
     begin {
-        if ($PsCmdlet.ParameterSetName -in ("Path", "UseOriginalFilename") ) {
+        if ($PsCmdlet.ParameterSetName -ne "Pipeline" ) {
             if (-not (Test-Path $Filename) ) {
                 throw "File not found"
-            }
-            if ($UseOriginalFilename) {
-                $FileObject = Get-ChildItem $Filename
-                $NewFileName = $FileObject.Name -replace $FileObject.Extension, ".json"
-                $OutFile = Join-Path $FileObject.Directory $NewFileName
             }
         }
     }
@@ -79,15 +102,44 @@ function Convert-SentinelARYamlToArm {
 
     end {
 
-        # Use parsed pipeline data if no file was specified (default)
-        if ($PsCmdlet.ParameterSetName -eq "Pipeline") {
-            $analyticRule = $FullYaml | ConvertFrom-Yaml
-        } else {
-            Write-Verbose "Read file `"$Filename`""
-            $analyticRule = Get-Content $Filename | ConvertFrom-Yaml
+        try {
+            # Use parsed pipeline data if no file was specified (default)
+            if ($PsCmdlet.ParameterSetName -eq "Pipeline") {
+                $analyticRule = $FullYaml | ConvertFrom-Yaml
+            } else {
+                Write-Verbose "Read file `"$Filename`""
+                $analyticRule = Get-Content $Filename | ConvertFrom-Yaml
+            }
+        } catch { 
+            throw "Could not convert source file. YAML might be corrupted" 
         }
 
-        Write-Verbose "Convert analytic rule $($analyticRule.name) ($($analyticRule.id)) to ARM template"
+        if ( [string]::IsNullOrWhiteSpace($analyticRule.name) -or [string]::IsNullOrWhiteSpace($analyticRule.id) ) {
+            throw "Analytics Rule name or id is empty. YAML might be corrupted" 
+        }
+
+        Write-Verbose "Convert Analytics Rule $($analyticRule.name) ($($analyticRule.id)) to ARM template"
+
+        #region Set output filename to defined value if not specified by user
+        if ($PsCmdlet.ParameterSetName -in ("UseOriginalFilename", "UseDisplayNameAsFilename", "UseIdAsFilename") ) {
+            $FileObject = Get-ChildItem $Filename
+            if ($UseOriginalFilename) {
+                # Use original filename as new filename
+                $NewFileName = $FileObject.Name -replace $FileObject.Extension, ".json"
+            }
+            if ($UseDisplayNameAsFilename) {
+                # Use the display name of the Analytics Rule as filename
+                $NewFileName = $analyticRule.name -Replace '[^0-9A-Z]', ' '
+                # Convert To CamelCase
+                $NewFileName = ((Get-Culture).TextInfo.ToTitleCase($NewFileName) -Replace ' ') + '.json'
+            }
+            if ($UseIdAsFilename) {
+                # Use id as of the Analytics Rule filename
+                $NewFileName = $analyticRule.id + '.json'
+            }
+            $OutFile = Join-Path $FileObject.Directory $NewFileName
+        }
+        #endregion
 
         $Template = @'
 {
@@ -112,7 +164,7 @@ function Convert-SentinelARYamlToArm {
 '@
 
         # Replace API version with specified version
-        $Template = $Template.Replace('<APIVERSION>',$APIVersion)
+        $Template = $Template.Replace('<APIVERSION>', $APIVersion)
 
         # Only include the following keys in ARM template
         $DefaultSortOrderInArmTemplate = @(
@@ -204,7 +256,7 @@ function Convert-SentinelARYamlToArm {
         $AnalyticsRuleKeys = $ARMTemplate.Keys | Sort-Object { $i = $DefaultSortOrderInArmTemplate.IndexOf($_) ; if ( $i -eq -1 ) { 100 } else { $i } }
         $ErrorActionPreference = "Continue"
         foreach ($PropertyName in $AnalyticsRuleKeys) {
-                $ARMTemplateOrdered.Add($PropertyName, $ARMTemplate.$PropertyName)
+            $ARMTemplateOrdered.Add($PropertyName, $ARMTemplate.$PropertyName)
         }
 
         # Convert hashtable to JSON
@@ -222,7 +274,7 @@ function Convert-SentinelARYamlToArm {
             $Result = $Result | ConvertFrom-Json | ConvertTo-Json -Depth 99
         }
 
-        if ($OutFile -or $UseOriginalFilename) {
+        if ($OutFile) {
             $Result | Out-File $OutFile -Force
             Write-Verbose "Output written to file: `"$OutFile`""
         } else {
