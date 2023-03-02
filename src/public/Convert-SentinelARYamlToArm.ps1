@@ -19,6 +19,9 @@ The path to the output ARM template file
 .PARAMETER UseOriginalFilename
 If set, the output file will be saved with the same name as the YAML file, but with a .json extension
 
+.PARAMETER APIVersion
+Set API version of the ARM template. Default is "2022-11-01"
+
 .EXAMPLE
 Convert-SentinelARYamlToArm -Filename "C:\Temp\MyRule.yaml" -OutFile "C:\Temp\MyRule.json"
 
