@@ -12,7 +12,7 @@
     RootModule = 'SentinelARConverter.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '1.1.5'
+    ModuleVersion     = '1.2.0'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()
@@ -24,7 +24,7 @@
     Author            = 'Fabian Bader'
 
     # Company or vendor of this module
-    CompanyName       = 'Unknown'
+    CompanyName       = ''
 
     # Copyright statement for this module
     Copyright         = '(c) Fabian Bader. All rights reserved.'

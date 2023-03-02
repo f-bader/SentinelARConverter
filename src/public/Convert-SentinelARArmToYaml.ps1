@@ -8,7 +8,7 @@ The ARM template can be provided as a file or as a string.
 The YAML file can be saved to the same directory as the ARM template file.
 
 .PARAMETER Filename
-The path to the ARM template file
+The path to the Analytics Rule ARM template file
 
 .PARAMETER Data
 The ARM template data as a string
@@ -17,7 +17,16 @@ The ARM template data as a string
 The path to the output YAML file
 
 .PARAMETER UseOriginalFilename
-If set, the output file will be saved with the same name as the ARM template file, but with a .yaml extension
+If set, the output file will be saved with the original filename of the ARM template file
+The extension will be replaced with .yaml
+
+.PARAMETER UseDisplayNameAsFilename
+If set, the output file will be saved with the display name of the Analytics Rule as filename
+The extension will be replaced with .yaml
+
+.PARAMETER UseIdAsFilename
+If set, the output file will be saved with the id of the Analytics Rule as filename
+The extension will be replaced with .yaml
 
 .EXAMPLE
 Convert-SentinelARArmToYaml -Filename "C:\Temp\MyRule.json" -OutFile "C:\Temp\MyRule.yaml"
@@ -27,7 +36,7 @@ Convert-SentinelARArmToYaml -Filename "C:\Temp\MyRule.json" -OutFile "C:\Temp\My
 #>
 
 function Convert-SentinelARArmToYaml {
-    [CmdletBinding(DefaultParameterSetName = 'UseOriginalFilename')]
+    [CmdletBinding(DefaultParameterSetName = 'StdOut')]
     param (
         [Parameter(Mandatory = $true,
             Position = 0,
@@ -35,6 +44,15 @@ function Convert-SentinelARArmToYaml {
         [Parameter(Mandatory = $true,
             Position = 0,
             ParameterSetName = 'UseOriginalFilename')]
+        [Parameter(Mandatory = $true,
+            Position = 0,
+            ParameterSetName = 'UseDisplayNameAsFilename')]
+        [Parameter(Mandatory = $true,
+            Position = 0,
+            ParameterSetName = 'UseIdAsFilename')]
+        [Parameter(Mandatory = $true,
+            Position = 0,
+            ParameterSetName = 'StdOut')]
         [string]$Filename,
 
         [Alias('Yaml')]
@@ -51,19 +69,20 @@ function Convert-SentinelARArmToYaml {
         [string]$OutFile,
 
         [Parameter(ParameterSetName = 'UseOriginalFilename')]
-        [switch]$UseOriginalFilename
+        [switch]$UseOriginalFilename,
+
+        [Parameter(ParameterSetName = 'UseDisplayNameAsFilename')]
+        [switch]$UseDisplayNameAsFilename,
+
+        [Parameter(ParameterSetName = 'UseIdAsFilename')]
+        [switch]$UseIdAsFilename
     )
 
 
     begin {
-        if ($PsCmdlet.ParameterSetName -in ("Path", "UseOriginalFilename") ) {
+        if ($PsCmdlet.ParameterSetName -ne "Pipeline" ) {
             if (-not (Test-Path $Filename) ) {
                 throw "File not found"
-            }
-            if ($UseOriginalFilename) {
-                $FileObject = Get-ChildItem $Filename
-                $NewFileName = $FileObject.Name -replace $FileObject.Extension, ".yaml"
-                $OutFile = Join-Path $FileObject.Directory $NewFileName
             }
         }
     }
@@ -116,11 +135,15 @@ function Convert-SentinelARArmToYaml {
         )
 
         # Use parsed pipeline data if no file was specified (default)
-        if ($PsCmdlet.ParameterSetName -eq "Pipeline") {
-            $AnalyticsRuleTemplate = $FullARM | ConvertFrom-Json -Verbose
-        } else {
-            Write-Verbose "Read file `"$Filename`""
-            $AnalyticsRuleTemplate = Get-Content $Filename | ConvertFrom-Json -Verbose
+        try {
+            if ($PsCmdlet.ParameterSetName -eq "Pipeline") {
+                $AnalyticsRuleTemplate = $FullARM | ConvertFrom-Json -Verbose
+            } else {
+                Write-Verbose "Read file `"$Filename`""
+                $AnalyticsRuleTemplate = Get-Content $Filename | ConvertFrom-Json -Verbose
+            }
+        } catch {
+            throw "Could not convert source file. JSON might be corrupted"
         }
 
         if ($AnalyticsRuleTemplate.resources.Count -ne 1) {
@@ -131,9 +154,32 @@ function Convert-SentinelARArmToYaml {
         if ($AnalyticsRuleTemplate.resources.id -match "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}") {
             $Id = $Matches[0]
         } else {
-            Write-Verbose "Error reading current Id. Generating new Id."
+            Write-Warning "Error reading current Id. Generating new Id."
             $Id = (New-Guid).Guid
         }
+
+        Write-Verbose "Convert Analytics Rule $($AnalyticsRuleTemplate.resources.properties.displayName) ($($Id)) to YAML file"
+
+        #region Set output filename to defined value if not specified by user
+        if ($PsCmdlet.ParameterSetName -in ("UseOriginalFilename", "UseDisplayNameAsFilename", "UseIdAsFilename") ) {
+            $FileObject = Get-ChildItem $Filename
+            if ($UseOriginalFilename) {
+                # Use original filename as new filename
+                $NewFileName = $FileObject.Name -replace $FileObject.Extension, ".yaml"
+            }
+            if ($UseDisplayNameAsFilename) {
+                # Use the display name of the Analytics Rule as filename
+                $NewFileName = $AnalyticsRuleTemplate.resources.properties.displayName -Replace '[^0-9A-Z]', ' '
+                # Convert To CamelCase
+                $NewFileName = ((Get-Culture).TextInfo.ToTitleCase($NewFileName) -Replace ' ') + '.yaml'
+            }
+            if ($UseIdAsFilename) {
+                # Use id as of the Analytics Rule filename
+                $NewFileName = $Id + '.yaml'
+            }
+            $OutFile = Join-Path $FileObject.Directory $NewFileName
+        }
+        #endregion
 
         # Get the properties of the analytic rule
         $AnalyticsRule = $AnalyticsRuleTemplate.resources | Select-Object -ExpandProperty properties
@@ -179,7 +225,7 @@ function Convert-SentinelARArmToYaml {
         $AnalyticsRuleYAML = $AnalyticsRuleCleaned | ConvertTo-Yaml
 
         # Write the YAML to a file or return the YAML
-        if ($OutFile -or $UseOriginalFilename) {
+        if ($OutFile) {
             $AnalyticsRuleYAML | Out-File $OutFile -Force -Encoding utf8
             Write-Verbose "Output written to file: `"$OutFile`""
         } else {
