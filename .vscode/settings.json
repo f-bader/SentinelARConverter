@@ -3,4 +3,5 @@
   "powershell.codeFormatting.trimWhitespaceAroundPipe": true,
   "powershell.codeFormatting.useCorrectCasing": true,
   "powershell.codeFormatting.whitespaceBetweenParameters": true
+   "powershell.scriptAnalysis.settingsPath": "tests/ScriptAnalyzerSettings.psd1"
 }
