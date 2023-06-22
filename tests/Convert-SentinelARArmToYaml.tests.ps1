@@ -17,21 +17,25 @@ BeforeAll {
 }
 
 Describe "Convert-SentinelARArmToYaml" {
+
     BeforeEach {
         if (Test-Path "$PSScriptRoot\examples\$convertedExampleFileName") {
             Remove-Item "$PSScriptRoot/examples/$convertedExampleFileName"
         }
     }
+
     AfterEach {
         if (Test-Path $convertedExampleFilePath) {
             Remove-Item $convertedExampleFilePath
         }
     }
+
     Context "When no valid path was passed" -Tag Integration {
         It "Throws an error" {
             { Convert-SentinelARArmToYaml -Filename "C:\Not\A\Real\File.json" } | Should -Throw "File not found"
         }
     }
+
     Context "If UseOriginalFilename was passed" -Tag Integration {
         It "Creates a yaml file in the same folder as the ARM template" {
             $convertSentinelARArmToYamlSplat = @{
@@ -58,6 +62,7 @@ Describe "Convert-SentinelARArmToYaml" {
         }
 
     }
+
     Context "If neither OutFile or UseOriginalFilename is passed" -Tag Integration {
         It "Outputs YAML to the console" {
             $convertSentinelARArmToYamlSplat = @{
@@ -69,6 +74,7 @@ Describe "Convert-SentinelARArmToYaml" {
             Get-ChildItem -Path $PSScriptRoot -Recurse -Filter $convertedExampleFileName | Should -BeNullOrEmpty
         }
     }
+
     Context "If an ARM template file content is passed via pipeline" -Tag Integration {
 
         It "Should convert a Scheduled Query Alert Sentinel Alert Rule ARM template to a YAML file" {
@@ -79,8 +85,7 @@ Describe "Convert-SentinelARArmToYaml" {
 
             Get-Content -Path $convertSentinelARArmToYamlSplat.Filename -Raw | Convert-SentinelARArmToYaml -OutFile $convertSentinelARArmToYamlSplat.OutFile
 
-            $path = $convertSentinelARArmToYamlSplat.Filename -replace "\.json$", ".yaml"
-            Test-Path -Path $path | Should -Be $True
+            Test-Path -Path $convertSentinelARArmToYamlSplat.OutFile | Should -Be $True
         }
 
     }
@@ -97,6 +102,7 @@ Describe "Convert-SentinelARArmToYaml" {
             } | Should -Throw "ARM template must contain exactly one resource"
         }
     }
+
     Context "If an invalid template id is provided in the analytics rule resources block" -Tag Unit {
         It "Creates a new guid" {
 
@@ -105,6 +111,7 @@ Describe "Convert-SentinelARArmToYaml" {
             $outputPath | Should -Not -FileContentMatch 'id: z-4a5f-4d27-8a26-b60a7952d5af'
         }
     }
+
     Context "If redundant ARM Properties are present in the rules" -Tag Unit {
         It "Removes the redundant ARM properties" {
             $outputPath = "$PSScriptRoot/testOutput/$convertedExampleFileName"
@@ -114,6 +121,7 @@ Describe "Convert-SentinelARArmToYaml" {
             $outputPath | Should -Not -FileContentMatch '^enabled: true'
         }
     }
+
     Context "When the template contains timespan values" -Tag Unit {
 
         It "Properly converts the units" {
@@ -126,7 +134,9 @@ Describe "Convert-SentinelARArmToYaml" {
             $outputPath | Should -Not -FileContentMatch '^queryFrequency: PT'
         }
     }
+
     Context "When specific propertynames/comparison properties are found on AR objects" -Tag Unit {
+
         BeforeDiscovery {
             $convertedJSON = Get-Content -Path $exampleFilePath -Raw | ConvertFrom-Json -Depth 99 -AsHashtable
             foreach ($resource in $convertedJSON["resources"]) {
@@ -136,10 +146,12 @@ Describe "Convert-SentinelARArmToYaml" {
                 }
             }
         }
+
         BeforeAll {
             $ARMTemplateContent = Get-Content -Path $exampleFilePath -Raw
             $ARMTemplateContent | Convert-SentinelARArmToYaml -OutFile $outputPath
         }
+
         It "Properly converts the propertynames" {
 
             $outputPath | Should -Not -FileContentMatch '^displayName'
@@ -147,6 +159,7 @@ Describe "Convert-SentinelARArmToYaml" {
             $outputPath | Should -Not -FileContentMatch '^templateVersion'
             $outputPath | Should -Not -FileContentMatch '^techniques'
         }
+
         It "Properly converts the comparison operators" -Skip:$CannotCheckComparisonOperators {
             $outputPath | Should -Not -FileContentMatch 'GreaterThan$'
             $outputPath | Should -Not -FileContentMatch 'Equals$'
@@ -155,6 +168,7 @@ Describe "Convert-SentinelARArmToYaml" {
             $outputPath | Should -Not -FileContentMatch 'LessThanOrEqual$'
         }
     }
+
     Context "When converting a Sentinel Alert Rule ARM template to YAML" -Tag Integration {
         It "Should convert a Scheduled Query Alert Sentinel Alert Rule ARM template to a YAML-file" {
             $convertSentinelARArmToYamlSplat = @{
@@ -163,7 +177,7 @@ Describe "Convert-SentinelARArmToYaml" {
             }
 
             Convert-SentinelARArmToYaml @convertSentinelARArmToYamlSplat
-            Get-Content $convertSentinelARArmToYamlSplat.OutFile  | Should -Not -BeNullOrEmpty
+            Get-Content $convertSentinelARArmToYamlSplat.OutFile | Should -Not -BeNullOrEmpty
         }
     }
 }
