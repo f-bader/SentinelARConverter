@@ -192,6 +192,10 @@ function Convert-SentinelARArmToYaml {
         # Add the id and kind from the ARM template
         $AnalyticsRule = $AnalyticsRule | Add-Member -MemberType NoteProperty -Name "id" -Value $Id -PassThru -Force
         $AnalyticsRule = $AnalyticsRule | Add-Member -MemberType NoteProperty -Name "kind" -Value $AnalyticsRuleTemplate.resources.kind -PassThru -Force
+        # Add version if not present
+        if ( [string]::IsNullOrWhiteSpace($AnalyticsRuleTemplate.resources.properties.templateVersion) ) {
+            $AnalyticsRule = $AnalyticsRule | Add-Member -MemberType NoteProperty -Name "version" -Value "1.0.0" -PassThru -Force
+        }
         # Remove values that are not needed
         foreach ($RemoveArmValue in $RemoveArmValues) {
             $AnalyticsRule.PSObject.Properties.Remove($RemoveArmValue) | Out-Null

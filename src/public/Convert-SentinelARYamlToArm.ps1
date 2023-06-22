@@ -243,6 +243,7 @@ function Convert-SentinelARYamlToArm {
             "enabled"             = $true
             "customDetails"       = $null
             "entityMappings"      = $null
+            "templateVersion"     = "1.0.0"
         }
         foreach ( $KeyName in $RequiredParameters.Keys ) {
             if (  $KeyName -notin $ARMTemplate.Keys ) {

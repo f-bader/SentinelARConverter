@@ -9,10 +9,10 @@
 @{
 
     # Script module or binary module file associated with this manifest.
-    RootModule = 'SentinelARConverter.psm1'
+    RootModule        = 'SentinelARConverter.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '1.2.1'
+    ModuleVersion     = '1.2.2'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()
