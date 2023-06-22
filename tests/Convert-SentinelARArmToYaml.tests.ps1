@@ -1,7 +1,7 @@
 param(
     [Parameter()]
     [String]
-    $exampleFilePath = "$PSScriptRoot/examples/MicrosoftSecurityIncidentCreation.json"
+    $exampleFilePath = "$PSScriptRoot/examples/Scheduled.json"
 )
 
 BeforeAll {
@@ -63,6 +63,36 @@ Describe "Convert-SentinelARArmToYaml" {
 
     }
 
+    Context "If UseDisplayNameAsFilename was passed" -Tag Integration {
+        It "Creates a yaml file in the same folder as the ARM template with the display name as filename" {
+            $convertSentinelARArmToYamlSplat = @{
+                Filename                 = "$PSScriptRoot/examples/Scheduled.json"
+                UseDisplayNameAsFilename = $true
+            }
+
+            Convert-SentinelARArmToYaml @convertSentinelARArmToYamlSplat
+
+            "$PSScriptRoot/examples/AzureWAFMatchingForLog4jVulnCVE202144228.yaml" | Should -Exist
+            Remove-Item "$PSScriptRoot/examples/AzureWAFMatchingForLog4jVulnCVE202144228.yaml" -Force
+        }
+
+    }
+
+    Context "If UseIdAsFilename was passed" -Tag Integration {
+        It "Creates a yaml file in the same folder as the ARM template with the id as filename" {
+            $convertSentinelARArmToYamlSplat = @{
+                Filename        = "$PSScriptRoot/examples/Scheduled.json"
+                UseIdAsFilename = $true
+            }
+
+            Convert-SentinelARArmToYaml @convertSentinelARArmToYamlSplat
+
+            "$PSScriptRoot/examples/6bb8e22c-4a5f-4d27-8a26-b60a7952d5af.yaml" | Should -Exist
+            Remove-Item "$PSScriptRoot/examples/6bb8e22c-4a5f-4d27-8a26-b60a7952d5af.yaml" -Force
+        }
+
+    }
+
     Context "If neither OutFile or UseOriginalFilename is passed" -Tag Integration {
         It "Outputs YAML to the console" {
             $convertSentinelARArmToYamlSplat = @{
@@ -83,9 +113,9 @@ Describe "Convert-SentinelARArmToYaml" {
                 OutFile  = $convertedExampleFileName
             }
 
-            Get-Content -Path $convertSentinelARArmToYamlSplat.Filename -Raw | Convert-SentinelARArmToYaml -OutFile $convertSentinelARArmToYamlSplat.OutFile
+            Get-Content -Path $convertSentinelARArmToYamlSplat.Filename -Raw | Convert-SentinelARArmToYaml -OutFile $outputPath
 
-            Test-Path -Path $convertSentinelARArmToYamlSplat.OutFile | Should -Be $True
+            Test-Path -Path $outputPath | Should -Be $True
         }
 
     }
