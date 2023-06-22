@@ -1,0 +1,28 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "workspace": {
+            "type": "String"
+        }
+    },
+    "resources": [
+        {
+            "id": "[concat(resourceId('Microsoft.OperationalInsights/workspaces/providers', parameters('workspace'), 'Microsoft.SecurityInsights'),'/alertRules/757b4264-f393-48a7-8609-52fa157911cd')]",
+            "name": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/757b4264-f393-48a7-8609-52fa157911cd')]",
+            "type": "Microsoft.OperationalInsights/workspaces/providers/alertRules",
+            "kind": "MicrosoftSecurityIncidentCreation",
+            "apiVersion": "2022-09-01-preview",
+            "properties": {
+                "displayName": "Create incidents based on all alerts generated in Microsoft Defender for Cloud",
+                "description": "Create incidents based on Microsoft Defender for Cloud alerts",
+                "enabled": true,
+                "productFilter": "Azure Security Center",
+                "severitiesFilter": null,
+                "displayNamesFilter": null,
+                "displayNamesExcludeFilter": null,
+                "alertRuleTemplateName": null
+            }
+        }
+    ]
+}

@@ -31,6 +31,12 @@ The extension will be replaced with .yaml
 .EXAMPLE
 Convert-SentinelARArmToYaml -Filename "C:\Temp\MyRule.json" -OutFile "C:\Temp\MyRule.yaml"
 
+.EXAMPLE
+Convert-SentinelARArmToYaml -Filename "C:\Temp\MyRule.json" -UseOriginalFilename
+
+.EXAMPLE
+Get-Content -Path "C:\Temp\MyRule.json" -Raw | Convert-SentinelARArmToYaml -OutFile "C:\Temp\MyRule.yaml"
+
 .NOTES
   Author: Fabian Bader (https://cloudbrothers.info/)
 #>

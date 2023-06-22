@@ -1,0 +1,74 @@
+
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "workspace": {
+            "type": "String"
+        }
+    },
+    "resources": [
+        {
+            "id": "[concat(resourceId('Microsoft.OperationalInsights/workspaces/providers', parameters('workspace'), 'Microsoft.SecurityInsights'),'/alertRules/6bb8e22c-4a5f-4d27-8a26-b60a7952d5af')]",
+            "name": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/6bb8e22c-4a5f-4d27-8a26-b60a7952d5af')]",
+            "type": "Microsoft.OperationalInsights/workspaces/providers/alertRules",
+            "kind": "Scheduled",
+            "apiVersion": "2022-09-01-preview",
+            "properties": {
+                "displayName": "Azure WAF matching for Log4j vuln(CVE-2021-44228)",
+                "description": "This query will alert on a positive pattern match by Azure WAF for CVE-2021-44228 log4j vulnerability exploitation attempt. If possible, it then decodes the malicious command for further analysis.\n Refrence: https://www.microsoft.com/security/blog/2021/12/11/guidance-for-preventing-detecting-and-hunting-for-cve-2021-44228-log4j-2-exploitation/",
+                "severity": "High",
+                "enabled": true,
+                "query": "AzureDiagnostics\n| where ResourceProvider == \"MICROSOFT.NETWORK\" and Category in (\"ApplicationGatewayFirewallLog\", \"FrontdoorWebApplicationFirewallLog\")\n| extend details_data_s = column_ifexists(\"details_data_s\", tostring(AdditionalFields.details_data))\n| where details_data_s has \"jndi:\"\n| parse details_data_s with * '${' MaliciousCommand '} ' *\n| extend EncodeCmd = iff(MaliciousCommand has 'Base64/', split(split(MaliciousCommand, \"Base64/\",1)[0], \"}\", 0)[0], \"\")\n| extend EncodeCmd1 = iff(MaliciousCommand has 'base64/', split(split(MaliciousCommand, \"base64/\",1)[0], \"}\", 0)[0], \"\")\n| extend CmdLine = iff( isnotempty(EncodeCmd), EncodeCmd, EncodeCmd1)\n| extend DecodedCmdLine = base64_decode_tostring(tostring(CmdLine))\n| extend DecodedCmdLine = iff( isnotempty(DecodedCmdLine), DecodedCmdLine, \"Unable to decode/Doesn't need decoding\")\n| project TimeGenerated, Target=column_ifexists(\"hostname_s\", tostring(AdditionalFields.hostname)), MaliciousHost = column_ifexists(\"clientIp_s\", tostring(AdditionalFields.clientIp)) , MaliciousCommand, details_data_s = column_ifexists(\"details_data_s\", tostring(AdditionalFields.details_data)), DecodedCmdLine, Message,\nruleSetType_s = column_ifexists(\"ruleSetType_s\", tostring(AdditionalFields.ruleSetType)), OperationName, SubscriptionId, details_message_s = column_ifexists(\"details_message_s\", tostring(AdditionalFields.details_message)), \ndetails_file_s = column_ifexists(\"details_message_s\", tostring(AdditionalFields.details_file))\n| extend IPCustomEntity = MaliciousHost, timestamp = TimeGenerated",
+                "queryFrequency": "PT6H",
+                "queryPeriod": "PT6H",
+                "triggerOperator": "GreaterThan",
+                "triggerThreshold": 0,
+                "suppressionDuration": "PT1H",
+                "suppressionEnabled": false,
+                "startTimeUtc": null,
+                "tactics": [
+                    "InitialAccess"
+                ],
+                "techniques": [],
+                "alertRuleTemplateName": "2de8abd6-a613-450e-95ed-08e503369fb3",
+                "incidentConfiguration": {
+                    "createIncident": true,
+                    "groupingConfiguration": {
+                        "enabled": false,
+                        "reopenClosedIncident": false,
+                        "lookbackDuration": "PT5H",
+                        "matchingMethod": "AllEntities",
+                        "groupByEntities": [
+                            "Account",
+                            "IP",
+                            "Host",
+                            "URL",
+                            "FileHash"
+                        ],
+                        "groupByAlertDetails": null,
+                        "groupByCustomDetails": null
+                    }
+                },
+                "eventGroupingSettings": {
+                    "aggregationKind": "SingleAlert"
+                },
+                "alertDetailsOverride": null,
+                "customDetails": null,
+                "entityMappings": [
+                    {
+                        "entityType": "IP",
+                        "fieldMappings": [
+                            {
+                                "identifier": "Address",
+                                "columnName": "IPCustomEntity"
+                            }
+                        ]
+                    }
+                ],
+                "sentinelEntitiesMappings": null,
+                "templateVersion": null
+            }
+        }
+    ]
+}
