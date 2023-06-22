@@ -20,7 +20,7 @@ jobs:
         shell: pwsh
         run: |
           Set-PSRepository PSGallery -InstallationPolicy Trusted
-          Install-Module PSScriptAnalyzer -Force
+          Install-Module powershell-yaml, PSScriptAnalyzer -Force
 
       - name: Run PSScriptAnalyzer
         shell: pwsh
