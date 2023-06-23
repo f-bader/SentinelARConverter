@@ -5,7 +5,8 @@ param(
 )
 
 BeforeAll {
-    . "$PSScriptRoot\..\src\public\Convert-SentinelARArmToYaml.ps1"
+    $ModuleRoot = $PSScriptRoot | Split-Path -Parent
+    Import-Module -Name "$ModuleRoot/src/SentinelARConverter.psd1"
 
     New-Item -ItemType Directory -Path "$PSScriptRoot/testOutput" -Force | Out-Null
 
