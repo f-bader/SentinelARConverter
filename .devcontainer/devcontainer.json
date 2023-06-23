@@ -12,7 +12,7 @@
 			"nonFreePackages": "true"
 		},
 		"ghcr.io/natescherer/devcontainers-custom-features/powershell-resources:1": {
-			"resources": "powershell-yaml,Pester"
+			"resources": "powershell-yaml,Pester" //https://github.com/natescherer/devcontainers-custom-features/blob/main/src/powershell-resources/README.md
 		}
 	},
 	"postStartCommand": "mkdir /root/.config/powershell && echo 'Import-Module -Name ./src/SentinelARConverter.psd1' > /root/.config/powershell/Microsoft.PowerShell_profile.ps1",
