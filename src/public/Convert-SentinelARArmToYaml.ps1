@@ -44,34 +44,32 @@ Get-Content -Path "C:\Temp\MyRule.json" -Raw | Convert-SentinelARArmToYaml -OutF
 function Convert-SentinelARArmToYaml {
     [CmdletBinding(DefaultParameterSetName = 'StdOut')]
     param (
-        [Parameter(Mandatory = $true,
+        [Parameter(Mandatory,
             Position = 0,
             ParameterSetName = 'Path')]
-        [Parameter(Mandatory = $true,
+        [Parameter(Mandatory,
             Position = 0,
             ParameterSetName = 'UseOriginalFilename')]
-        [Parameter(Mandatory = $true,
+        [Parameter(Mandatory,
             Position = 0,
             ParameterSetName = 'UseDisplayNameAsFilename')]
-        [Parameter(Mandatory = $true,
+        [Parameter(Mandatory,
             Position = 0,
             ParameterSetName = 'UseIdAsFilename')]
-        [Parameter(Mandatory = $true,
+        [Parameter(Mandatory,
             Position = 0,
             ParameterSetName = 'StdOut')]
         [string]$Filename,
 
         [Alias('Yaml')]
-        [Parameter(Mandatory = $true,
-            ValueFromPipeline = $true,
+        [Parameter(Mandatory,
+            ValueFromPipeline,
             ParameterSetName = 'Pipeline',
             Position = 0)]
         [array]$Data,
 
-        [Parameter(Mandatory = $false,
-            ParameterSetName = 'Path')]
-        [Parameter(Mandatory = $false,
-            ParameterSetName = 'Pipeline')]
+        [Parameter(ParameterSetName = 'Path')]
+        [Parameter(ParameterSetName = 'Pipeline')]
         [string]$OutFile,
 
         [Parameter(ParameterSetName = 'UseOriginalFilename')]
