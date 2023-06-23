@@ -13,7 +13,7 @@
 		}
 	},
 	"postCreateCommand": "pwsh -C {Install-Module powershell-yaml,Pester -Force}",
-	"postStartCommand": "Import-Module -Name \"./src/SentinelARConverter.psd1\"",
+	"postStartCommand": "echo 'Import-Module -Name \"./src/SentinelARConverter.psd1\"' >> /root/.config/powershell/profile.ps1",
 
 	// Configure tool-specific properties.
 	"customizations": {
