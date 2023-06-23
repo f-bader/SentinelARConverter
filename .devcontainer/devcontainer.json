@@ -12,8 +12,8 @@
 			"nonFreePackages": "true"
 		}
 	},
-	"postCreateCommand": "Install-Module powershell-yaml,Pester -Force",
-	"postStartCommand": "Import-Module ${cwd}/src/SentinelARConverter.psd1",
+	"postCreateCommand": "pwsh -C {Install-Module powershell-yaml,Pester -Force}",
+	"postStartCommand": "Import-Module -Name \"./src/SentinelARConverter.psd1\"",
 
 	// Configure tool-specific properties.
 	"customizations": {
