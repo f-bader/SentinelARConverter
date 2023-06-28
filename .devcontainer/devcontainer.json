@@ -12,7 +12,7 @@
 			"nonFreePackages": "true"
 		},
 		"ghcr.io/natescherer/devcontainers-custom-features/powershell-resources:1": {
-			"resources": "powershell-yaml,Pester" //https://github.com/natescherer/devcontainers-custom-features/blob/main/src/powershell-resources/README.md
+			"resources": "powershell-yaml,Pester,PSScriptAnalyzer" //https://github.com/natescherer/devcontainers-custom-features/blob/main/src/powershell-resources/README.md
 		}
 	},
 	"postStartCommand": "mkdir /root/.config/powershell && echo 'Import-Module -Name ./src/SentinelARConverter.psd1' > /root/.config/powershell/Microsoft.PowerShell_profile.ps1",
@@ -28,7 +28,10 @@
 			
 			// Add the IDs of extensions you want installed when the container is created.
 			"extensions": [
-				"ms-vscode.powershell"
+				"ms-vscode.powershell",
+				"Gruntfuggly.todo-tree",
+				"TylerLeonhardt.vscode-inline-values-powershell",
+				"pspester.pester-test"
 			]
 		}
 	}
