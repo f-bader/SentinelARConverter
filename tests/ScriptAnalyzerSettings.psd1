@@ -1,7 +1,8 @@
 @{
+    IncludeDefaultRules = $true
     ExcludeRules   = @( "UseSyntacticallyCorrectExamples" )
     CustomRulePath = @(
-        'tests/Indented.ScriptAnalyzerRules/Indented.ScriptAnalyzerRules.psm1'
+        'Indented.ScriptAnalyzerRules/Indented.ScriptAnalyzerRules.psm1'
     )
     Rules          = @{
         PSUseCompatibleSyntax = @{
