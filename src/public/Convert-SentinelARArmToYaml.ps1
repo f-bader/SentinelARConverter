@@ -30,7 +30,7 @@ The extension will be replaced with .yaml
 
 .EXAMPLE
 Convert-SentinelARArmToYaml -Filename "C:\Temp\MyRule.json" -OutFile "C:\Temp\MyRule.yaml"
-Will convert a the file with a single ART to a single YAML-file 
+Will convert a the file with a single ART to a single YAML-file
 
 .EXAMPLE
 Convert-SentinelARArmToYaml -Filename "C:\Temp\MyRule.json" -UseOriginalFilename
@@ -152,7 +152,7 @@ function Convert-SentinelARArmToYaml {
             "templateVersion"       = "version"
             "techniques"            = "relevantTechniques"
         }
-        
+
         # Mapping of Arm operator names to YAML when different
         $CompareOperatorArm2Yaml = @{
             "Equals"             = "eq"
@@ -161,12 +161,12 @@ function Convert-SentinelARArmToYaml {
             "LessThan"           = "lt"
             "LessThanOrEqual"    = "le"
         }
-        
+
         # List of values to always remove
         $RemoveArmValues = @(
             "enabled"
         )
-        
+
         $DefaultSortOrderInYAML = @(
             "id",
             "name",
@@ -183,7 +183,6 @@ function Convert-SentinelARArmToYaml {
             "relevantTechniques",
             "query"
         )
-
 
         # Use pipeline data and create a variable containing all parsed strings
         if ($PsCmdlet.ParameterSetName -eq "Pipeline") {
@@ -233,9 +232,9 @@ function Convert-SentinelARArmToYaml {
                 Write-Warning "Error reading current Id. Generating new Id."
                 $Id = (New-Guid).Guid
             }
-        
+
             Write-Verbose "Convert Analytics Rule: $($resource.properties.displayName) ($($Id)) to YAML file"
-        
+
             #region Set output filename to defined value if not specified by user
             if ($PsCmdlet.ParameterSetName -in ("UseOriginalFilename", "UseDisplayNameAsFilename", "UseIdAsFilename") ) {
                 $FileObject = Get-ChildItem $Filename
@@ -257,7 +256,7 @@ function Convert-SentinelARArmToYaml {
                     # Use id as of the Analytics Rule filename
                     $NewFileName = $Id + '.yaml'
                 }
-                
+
                 $OutFile = Join-Path $FileObject.Directory $NewFileName
             } elseif ($PsCmdlet.ParameterSetName -in ("Path") -or ($PsCmdlet.ParameterSetName -in ("Pipeline") -and $OutFile -and -not $Directory)) {
                 if ($resourceCounter -gt 0) {
@@ -277,7 +276,7 @@ function Convert-SentinelARArmToYaml {
                 $OutFile = Join-Path -Path $Directory -ChildPath $NewFileName
             }
             #endregion
-        
+
             # Get the properties of the analytic rule
             $AnalyticsRule = $resource | Select-Object -ExpandProperty properties
             # Add the id and kind from the ARM template
@@ -291,24 +290,24 @@ function Convert-SentinelARArmToYaml {
             foreach ($RemoveArmValue in $RemoveArmValues) {
                 $AnalyticsRule.PSObject.Properties.Remove($RemoveArmValue) | Out-Null
             }
-        
+
             $JSON = $AnalyticsRule | ConvertTo-Json -Depth 100
             # Use ISO8601 format for timespan values
             $JSON = $JSON -replace '"PT([0-9]+)M"', '"$1m"' -replace '"PT([0-9]+)H"', '"$1h"' -replace '"P([0-9]+)D"', '"$1d"'
-        
+
             # Convert the names of the properties to the names used in the YAML
             foreach ($Arm2Yaml in $ValueNameMappingArm2Yaml.Keys) {
                 $JSON = $JSON -replace $Arm2Yaml, $ValueNameMappingArm2Yaml[$Arm2Yaml]
             }
-        
+
             # Convert the compare operators to the names used in the YAML
             foreach ($Arm2Yaml in $CompareOperatorArm2Yaml.Keys) {
                 $JSON = $JSON -replace $Arm2Yaml, $CompareOperatorArm2Yaml[$Arm2Yaml]
             }
-        
+
             # Convert the JSON to a PowerShell object
             $AnalyticsRule = $JSON | ConvertFrom-Json
-        
+
             # Use custom sort order of YAML
             $ErrorActionPreference = "SilentlyContinue"
             $AnalyticsRuleKeys = $AnalyticsRule.PSObject.Properties.Name | Sort-Object { $i = $DefaultSortOrderInYAML.IndexOf($_) ; if ( $i -eq -1 ) { 100 } else { $i } }
@@ -321,7 +320,7 @@ function Convert-SentinelARArmToYaml {
                     $AnalyticsRuleCleaned.Add($PropertyName, $AnalyticsRule.$PropertyName)
                 }
             }
-        
+
             # Convert the PowerShell object to YAML
             $AnalyticsRuleYAML = $AnalyticsRuleCleaned | ConvertTo-Yaml
 

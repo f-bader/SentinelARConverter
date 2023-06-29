@@ -53,7 +53,7 @@ Describe "Convert-SentinelARArmToYaml" {
         Get-ChildItem $PSScriptRoot/testOutput/ | Remove-Item -Recurse -Force
         Get-ChildItem $PSScriptRoot/examples -Filter *.yaml | Remove-Item -Force
     }
-    
+
     AfterEach {
         if (-not $RetainTestFiles) {
             Get-ChildItem $PSScriptRoot/testOutput/ | Remove-Item -Recurse -Force
@@ -102,7 +102,7 @@ Describe "Convert-SentinelARArmToYaml" {
                 $template = $ARMTemplateContent |
                 ConvertFrom-Json -Depth 99 -AsHashtable
                 $template.resources += $notAnAlertRuleTemplate
-                
+
                 $template |
                 ConvertTo-Json -Depth 99 |
                 Convert-SentinelARArmToYaml -OutFile $outputPath
@@ -202,7 +202,7 @@ Describe "Single File Testcases" {
         Get-ChildItem $PSScriptRoot/testOutput/ | Remove-Item -Recurse -Force
         Get-ChildItem $PSScriptRoot/examples -Filter *.yaml | Remove-Item -Force
     }
-    
+
     AfterEach {
         if (-not $RetainTestFiles) {
             Get-ChildItem $PSScriptRoot/testOutput/ | Remove-Item -Recurse -Force
@@ -216,79 +216,71 @@ Describe "Single File Testcases" {
                 Filename = $exampleFilePath
                 OutFile  = "$PSScriptRoot/testOutput/$convertedExampleFileName"
             }
-    
+
             Convert-SentinelARArmToYaml @convertSentinelARArmToYamlSplat
             Get-Content $convertSentinelARArmToYamlSplat.OutFile | Should -Not -BeNullOrEmpty
         }
     }
-    
+
     Context "If UseOriginalFilename was passed" -Tag Integration {
         It "Creates a yaml file in the same folder as the ARM template" {
             $convertSentinelARArmToYamlSplat = @{
                 Filename            = $exampleFilePath
                 UseOriginalFilename = $true
             }
-    
+
             Convert-SentinelARArmToYaml @convertSentinelARArmToYamlSplat
-    
+
             $convertedExampleFilePath | Should -Exist
         }
-    
+
         It "Should use the original filename" {
             $convertSentinelARArmToYamlSplat = @{
                 Filename            = $exampleFilePath
                 UseOriginalFilename = $true
             }
-    
+
             Convert-SentinelARArmToYaml @convertSentinelARArmToYamlSplat
-    
+
             $path = $convertSentinelARArmToYamlSplat.Filename -replace "\.json$", ".yaml"
-    
+
             Get-ChildItem $convertedExampleFilePath | Should -Match $convertedExampleFileName
         }
-    
     }
-    
+
     Context "If UseDisplayNameAsFilename was passed" -Tag Integration {
         It "Creates a yaml file in the same folder as the ARM template with the display name as filename" {
             $convertSentinelARArmToYamlSplat = @{
                 Filename                 = "$PSScriptRoot/examples/Scheduled.json"
                 UseDisplayNameAsFilename = $true
             }
-    
             Convert-SentinelARArmToYaml @convertSentinelARArmToYamlSplat
-    
+
             "$PSScriptRoot/examples/AzureWAFMatchingForLog4jVulnCVE202144228.yaml" | Should -Exist
             Remove-Item "$PSScriptRoot/examples/AzureWAFMatchingForLog4jVulnCVE202144228.yaml" -Force
         }
-    
     }
-    
+
     Context "If UseIdAsFilename was passed" -Tag Integration {
         It "Creates a yaml file in the same folder as the ARM template with the id as filename" {
             $convertSentinelARArmToYamlSplat = @{
                 Filename        = "$PSScriptRoot/examples/Scheduled.json"
                 UseIdAsFilename = $true
             }
-    
+
             Convert-SentinelARArmToYaml @convertSentinelARArmToYamlSplat
-    
+
             "$PSScriptRoot/examples/6bb8e22c-4a5f-4d27-8a26-b60a7952d5af.yaml" | Should -Exist
             Remove-Item "$PSScriptRoot/examples/6bb8e22c-4a5f-4d27-8a26-b60a7952d5af.yaml" -Force
         }
-    
     }
-    
     Context "If an ARM template file content is passed via pipeline" -Tag Integration {
-    
         It "Should convert a Scheduled Query Alert Sentinel Alert Rule ARM template to a YAML file" {
             $convertSentinelARArmToYamlSplat = @{
                 Filename = $exampleFilePath
                 OutFile  = $convertedExampleFileName
             }
-    
             Get-Content -Path $convertSentinelARArmToYamlSplat.Filename -Raw | Convert-SentinelARArmToYaml -OutFile $outputPath
-    
             Test-Path -Path $outputPath | Should -Be $True
         }
     }
@@ -298,7 +290,7 @@ Describe "Single File Testcases" {
             $convertSentinelARArmToYamlSplat = @{
                 Filename = $exampleFilePath
             }
-    
+
             $output = (Get-Content -Path $convertSentinelARArmToYamlSplat.Filename -Raw | Convert-SentinelARArmToYaml)
             $output | Should -Not -BeNullOrEmpty
             Get-ChildItem -Path $PSScriptRoot -Recurse -Filter $convertedExampleFileName | Should -BeNullOrEmpty
@@ -312,7 +304,6 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateConte
         Get-ChildItem $PSScriptRoot/testOutput/ | Remove-Item -Recurse -Force
         Get-ChildItem $PSScriptRoot/examples -Filter *.yaml | Remove-Item -Force
     }
-    
     AfterEach {
         if (-not $RetainTestFiles) {
             Get-ChildItem $PSScriptRoot/testOutput/ | Remove-Item -Recurse -Force
@@ -341,7 +332,7 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateConte
             }
         }
     }
-    
+
     Context "If UseOriginalFilename was passed" -Tag Integration {
         BeforeDiscovery {
             # There always will be at least once file created, but we don't name the first one with a suffix
@@ -372,7 +363,7 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateConte
         It "Creates a yaml file in the same folder as the ARM template (<_>)" -ForEach $Discoveryfilenames {
             Get-Content (Join-Path -Path $exampleParent -ChildPath $_) | Should -Not -BeNullOrEmpty
         }
-    
+
         It "Should use the original filename (<_>)" -ForEach $Discoveryfilenames {
             (Get-ChildItem $exampleParent -Filter *.yaml ).Name | Should -Match "^$($MultipleExampleFile.BaseName)"
         }
@@ -380,9 +371,8 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateConte
         It "Should suffix the original filename with a number if multiple yaml files are created (<_>)" -ForEach $Discoveryfilenames {
             (Get-ChildItem $exampleParent/* -Filter *.yaml -Exclude $convertedMultipleExampleFileName).Name | Should -Match "^$($MultipleExampleFile.BaseName)"
         }
-    
     }
-    
+
     Context "If UseDisplayNameAsFilename was passed" -Tag Integration {
         BeforeDiscovery {
             $DiscoveryfileNames = foreach ($displayname in $DiscoveryconvertedMultipleTemplateContent.resources.properties.displayName) {
@@ -408,12 +398,9 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateConte
             }
         }
         It "Creates yaml files in the same folder as the ARM template with the display name as filename (<_>)" -ForEach $DiscoveryfileNames {
-    
             (Get-ChildItem $exampleParent/* -Filter *.yaml -Exclude $convertedMultipleExampleFileName).Name | Should -BeIn $fileNames
         }
-    
     }
-    
     Context "If UseIdAsFilename was passed" -Tag Integration {
         BeforeDiscovery {
             $DiscoveryfileNames = foreach ($displayname in $DiscoveryconvertedMultipleTemplateContent.resources.properties.displayName) {
@@ -438,12 +425,9 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateConte
             )
         }
         It "Creates a yaml file in the same folder as the ARM template with the id as filename (<_>)" -ForEach $DiscoveryfileNames {
-    
             (Get-ChildItem -Path $exampleParent -Filter *.yaml).BaseName | Should -BeIn $ids
         }
-    
     }
-    
 
     Context "If an ARM template file content, containing multiple ARTs, is passed via pipeline using OutFile" -Tag Integration {
 
@@ -527,7 +511,6 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateConte
             $convertSentinelARArmToYamlSplat = @{
                 Filename = $exampleFilePath
             }
-    
             $output = (Get-Content -Path $convertSentinelARArmToYamlSplat.Filename -Raw | Convert-SentinelARArmToYaml)
             $output | Should -Not -BeNullOrEmpty
             Get-ChildItem -Path $PSScriptRoot -Recurse -Filter $convertedExampleFileName | Should -BeNullOrEmpty
@@ -536,7 +519,6 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateConte
             $convertSentinelARArmToYamlSplat = @{
                 Filename = $exampleMultipleFilePath
             }
-    
             $output = (Get-Content -Path $convertSentinelARArmToYamlSplat.Filename -Raw | Convert-SentinelARArmToYaml)
             $output[0] | Should -Not -BeNullOrEmpty
             $output[1] | Should -Not -BeNullOrEmpty
