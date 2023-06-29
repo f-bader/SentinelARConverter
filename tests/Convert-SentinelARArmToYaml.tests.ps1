@@ -11,6 +11,10 @@ param(
 )
 
 BeforeDiscovery {
+    # Import the module for the tests
+    $ModuleRoot = $PSScriptRoot | Split-Path -Parent
+    Import-Module -Name "$ModuleRoot/src/SentinelARConverter.psd1"
+    
     # Multiple ART
     $DiscoveryARMTemplateMultipleContent = Get-Content $exampleMultipleFilePath -Raw
     $DiscoveryconvertedMultipleTemplateContent = $DiscoveryARMTemplateMultipleContent | ConvertFrom-Json -Depth 99
