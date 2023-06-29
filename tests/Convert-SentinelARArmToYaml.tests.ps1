@@ -545,7 +545,6 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateConte
 AfterAll {
     if (-not $RetainTestFiles) {
         Remove-Item -Path "$PSScriptRoot/testOutput/" -Recurse -Force
-        # Remove-Module SentinelARConverter -Force
     }
 }
 
