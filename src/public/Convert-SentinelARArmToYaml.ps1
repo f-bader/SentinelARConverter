@@ -30,12 +30,43 @@ The extension will be replaced with .yaml
 
 .EXAMPLE
 Convert-SentinelARArmToYaml -Filename "C:\Temp\MyRule.json" -OutFile "C:\Temp\MyRule.yaml"
+Will convert a the file with a single ART to a single YAML-file 
 
 .EXAMPLE
 Convert-SentinelARArmToYaml -Filename "C:\Temp\MyRule.json" -UseOriginalFilename
+Will convert a the file with a single ART to a single YAML-file, with the same basename as the supplied JSON (ARM).
 
 .EXAMPLE
 Get-Content -Path "C:\Temp\MyRule.json" -Raw | Convert-SentinelARArmToYaml -OutFile "C:\Temp\MyRule.yaml"
+Will convert JSON ARM-text in the pipeline containg a single ART to a single YAML-file, saved in the supplied filename.
+
+.EXAMPLE
+Convert-SentinelARArmToYaml -Filename "C:\Temp\MultipleRules.json" -OutFile "C:\Temp\MultipleRules.yaml"
+Will create multiple files, one per alert in the file: MultipleRules.yaml, MultipleRules_1.yaml, MultipleRules_2.yaml etc.
+
+.EXAMPLE
+Convert-SentinelARArmToYaml -Filename "C:\Temp\MultipleRules.json" -UseOriginalFilename
+Will create multiple files in the same directory, one per alert in the file names as: MultipleRules.yaml, MultipleRules_1.yaml and MultipleRules_2.yaml.
+
+.EXAMPLE
+Convert-SentinelARArmToYaml -Filename "C:\Temp\Multiple.json" -UseDisplayNameAsFilename
+Will create multiple files in the same directory, one per alert in the file names as: Displaynameofalert1.yaml, Displaynameofalert2.yaml, Displayname3.yaml
+
+.EXAMPLE
+Convert-SentinelARArmToYaml -Filename "C:\Temp\MyRule.json" -UseIdAsFilename
+Will create multiple files in the same directory, one per alert in the file, with the names: 734075d4-1974-4318-b262-5268e36e4f35.yaml, 734075d4-1974-4318-b262-5268e36e4f34.yaml etc.
+
+.EXAMPLE
+Get-Content -Path "C:\Temp\Multiple.json" -Raw | Convert-SentinelARArmToYaml -OutFile "C:\Temp\MyRule.yaml"
+Will create multiple files in the supplied directory, with the prefix mentioned in OutFile, one per alert in the file, with the names: MyRule.yaml, MyRule_1.yaml etc.
+
+.EXAMPLE
+Get-Content -Path "C:\Temp\Multiple.json" -Raw | Convert-SentinelARArmToYaml -Directory "C:\Temp\"  -UseDisplayNameAsFilename
+Will create multiple files in the supplied directory, one per alert in the file, with the names: Displaynameofalert1.yaml, Displaynameofalert2.yaml, Displayname3.yaml
+
+.EXAMPLE
+Get-Content -Path "C:\Temp\Multiple.json" -Raw | Convert-SentinelARArmToYaml -Directory "C:\Temp\" -UseIdAsFilename
+Will create multiple files in the supplied directory, one per alert in the file, with the names: 734075d4-1974-4318-b262-5268e36e4f35.yaml, 734075d4-1974-4318-b262-5268e36e4f34.yaml etc.
 
 .NOTES
   Author: Fabian Bader (https://cloudbrothers.info/)
@@ -298,12 +329,8 @@ function Convert-SentinelARArmToYaml {
 
             # Write the YAML to a file or return the YAML
             if ($OutFile) {
-                # if (-not (Test-Path $OutFile)) {
                 $AnalyticsRuleYAML | Out-File $OutFile -NoClobber:(-not $Force) -Encoding utf8
                 Write-Verbose "Output written to file: `"$OutFile`""
-                # } else {
-                #     Write-Warning "Duplicate filename Skipping writing to file: `"$OutFile`""
-                #} 
             } else {
                 $AnalyticsRuleYAML
             }
