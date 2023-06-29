@@ -107,7 +107,6 @@ Describe "Convert-SentinelARArmToYaml" {
     }
 
     Context "If an invalid template id is provided in the analytics rule resources block" -Tag Unit {
-        #TODO: Uses a specific file reference
         It "Creates a new guid" {
             Convert-SentinelARArmToYaml -Filename "$PSScriptRoot/examples/ScheduledBadGuid.json" -OutFile $outputPath
 
