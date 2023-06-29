@@ -1,10 +1,10 @@
 @{
     IncludeDefaultRules = $true
-    ExcludeRules   = @( "UseSyntacticallyCorrectExamples" )
-    CustomRulePath = @(
-        'Indented.ScriptAnalyzerRules/Indented.ScriptAnalyzerRules.psm1'
+    ExcludeRules        = @( "UseSyntacticallyCorrectExamples" )
+    CustomRulePath      = @(
+        'tests/Indented.ScriptAnalyzerRules/Indented.ScriptAnalyzerRules.psm1'
     )
-    Rules          = @{
+    Rules               = @{
         PSUseCompatibleSyntax = @{
             # This turns the rule on (setting it to false will turn it off)
             Enable         = $true
