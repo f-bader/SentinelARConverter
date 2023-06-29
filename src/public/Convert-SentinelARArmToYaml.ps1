@@ -169,14 +169,13 @@ function Convert-SentinelARArmToYaml {
             }
         } catch {
             throw "Could not convert source file. JSON might be corrupted"
-        }    
+        }
 
         try {
             if ((-not $AnalyticsRuleTemplate.resources) -or (($AnalyticsRuleTemplate.resources).Count -lt 1)) {
                 throw "This template contains no Analytics Rules"
             }
-        }
-        catch {
+        } catch {
             $PSCmdlet.ThrowTerminatingError($_)
         }
 
@@ -184,8 +183,7 @@ function Convert-SentinelARArmToYaml {
             if ($AnalyticsRuleTemplate.resources.type -ne "Microsoft.OperationalInsights/workspaces/providers/alertRules") {
                 throw "This template contains resources other than Analytics Rules"
             }
-        }
-        catch {
+        } catch {
             $PSCmdlet.ThrowTerminatingError($_)
         }
 
