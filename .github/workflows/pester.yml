@@ -30,7 +30,7 @@ jobs:
       - name: Run Tests
         shell: pwsh
         run: |
-          $config = New-PesterConfiguration -Hashtable @{TestResult = @{Enabled = $true }; Run = @{Exit = $false }; }
+          $config = New-PesterConfiguration -Hashtable @{TestResult = @{Enabled = $true }; Run = @{Exit = $false }; Output = @{ Verbosity = 'Detailed' }}
           Invoke-Pester -Configuration $config
 
       - name: Upload test results
