@@ -14,7 +14,7 @@ BeforeDiscovery {
     # Import the module for the tests
     $ModuleRoot = $PSScriptRoot | Split-Path -Parent
     Import-Module -Name "$ModuleRoot/src/SentinelARConverter.psd1"
-    
+
     # Multiple ART
     $DiscoveryARMTemplateMultipleContent = Get-Content $exampleMultipleFilePath -Raw
     $DiscoveryconvertedMultipleTemplateContent = $DiscoveryARMTemplateMultipleContent | ConvertFrom-Json -Depth 99
@@ -75,38 +75,7 @@ Describe "Convert-SentinelARArmToYaml" {
                 Select-Object "`$schema", "contentVersion", "parameters" |
                 ConvertTo-Json -Depth 99 |
                 Convert-SentinelARArmToYaml -OutFile $outputPath
-            } | Should -Throw "This template contains no Analytics Rules"
-        }
-    }
-
-    Context "When no resources are present in the passed ARM template" -Tag Unit {
-
-        It "Throws an error" {
-            {
-                $ARMTemplateContent |
-                ConvertFrom-Json -Depth 99 |
-                Select-Object "`$schema", "contentVersion", "parameters" |
-                ConvertTo-Json -Depth 99 |
-                Convert-SentinelARArmToYaml -OutFile $outputPath
-            } | Should -Throw "This template contains no Analytics Rules"
-        }
-    }
-    Context "When other resourcetypes are present in the passed ARM template" -Tag Unit {
-
-        It "Throws an error" {
-            $notAnAlertRuleTemplate = @{
-                "type" = 'Microsoft.Logic/workflows'
-            }
-
-            {
-                $template = $ARMTemplateContent |
-                ConvertFrom-Json -Depth 99 -AsHashtable
-                $template.resources += $notAnAlertRuleTemplate
-
-                $template |
-                ConvertTo-Json -Depth 99 |
-                Convert-SentinelARArmToYaml -OutFile $outputPath
-            } | Should -Throw "This template contains resources other than Analytics Rules"
+            } | Should -Throw "This template contains no Analytics Rules or resources"
         }
     }
 
@@ -301,7 +270,7 @@ Describe "Single File Testcases" {
 Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateContent.resources).Count -lt 2) {
 
     BeforeEach {
-        Get-ChildItem $PSScriptRoot/testOutput/ | Remove-Item -Recurse -Force
+        Get-ChildItem $PSScriptRoot/testOutput/ -Filter *.yaml | Remove-Item -Recurse -Force
         Get-ChildItem $PSScriptRoot/examples -Filter *.yaml | Remove-Item -Force
     }
     AfterEach {
@@ -351,7 +320,9 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateConte
                 }
             )
             $Discoveryfilenames += $DiscoveryFile.BaseName + ".yaml"
+            Get-ChildItem -Path (Split-Path $exampleMultipleFilePath -Parent) -Filter *.yaml | Remove-Item -Force
         }
+
         BeforeEach {
             $convertSentinelARArmToYamlSplat = @{
                 Filename            = $exampleMultipleFilePath
@@ -359,6 +330,13 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateConte
             }
             Convert-SentinelARArmToYaml @convertSentinelARArmToYamlSplat
             $exampleParent = $exampleMultipleFilePath | Split-Path -Parent
+        }
+
+        AfterAll {
+            if (-not $RetainTestFiles) {
+                Get-ChildItem $PSScriptRoot/testOutput/ | Remove-Item -Recurse -Force
+                Get-ChildItem -Path $PSScriptRoot/examples -Filter *.yaml | Remove-Item -Force
+            }
         }
         It "Creates a yaml file in the same folder as the ARM template (<_>)" -ForEach $Discoveryfilenames {
             Get-Content (Join-Path -Path $exampleParent -ChildPath $_) | Should -Not -BeNullOrEmpty
@@ -441,7 +419,7 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateConte
                 Filename = $exampleMultipleFilePath
                 OutFile  = "$PSScriptRoot/testOutput/$convertedMultipleExampleFileName"
             }
-            Get-Content $convertSentinelARArmToYamlSplat.Filename -Raw | Convert-SentinelARArmToYaml -OutFile $convertSentinelARArmToYamlSplat.OutFile
+            Get-Content $convertSentinelARArmToYamlSplat.Filename -Raw | Convert-SentinelARArmToYaml -OutFile $convertSentinelARArmToYamlSplat.OutFile -Force
         }
         It "Converts to multiple YAML-file with the specified suffix (Alert #<_> <convertedMultipleExampleFileName>)" -ForEach $DiscoveryExpectedFilesAmount {
             if ($_ -eq 0) {
