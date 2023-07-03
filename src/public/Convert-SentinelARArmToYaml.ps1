@@ -78,16 +78,16 @@ function Convert-SentinelARArmToYaml {
         [Parameter(Mandatory,
             Position = 0,
             ParameterSetName = 'Path')]
-        [Parameter(Mandatory,
+        [Parameter(
             Position = 0,
             ParameterSetName = 'UseOriginalFilename')]
-        [Parameter(Mandatory,
+        [Parameter(
             Position = 0,
             ParameterSetName = 'UseDisplayNameAsFilename')]
-        [Parameter(Mandatory,
+        [Parameter(
             Position = 0,
             ParameterSetName = 'UseIdAsFilename')]
-        [Parameter(Mandatory,
+        [Parameter(
             Position = 0,
             ParameterSetName = 'StdOut')]
         [string]$Filename,
@@ -104,7 +104,7 @@ function Convert-SentinelARArmToYaml {
         [string]$OutFile,
 
         [Parameter(ParameterSetName = 'UseOriginalFilename')]
-        [switch]$UseOriginalFilename,
+        [switch]$UseOriginalFilename = $false,
 
         [Parameter(ParameterSetName = 'Pipeline')]
         [Parameter(ParameterSetName = 'UseDisplayNameAsFilename')]
@@ -115,7 +115,7 @@ function Convert-SentinelARArmToYaml {
         [switch]$UseIdAsFilename,
 
         [Parameter(ParameterSetName = 'Pipeline')]
-        [string]$Directory,
+        [string]$Directory = $PWD,
 
         [Parameter(
             ParameterSetName = 'Path')]
@@ -203,15 +203,7 @@ function Convert-SentinelARArmToYaml {
 
         try {
             if ((-not $AnalyticsRuleTemplate.resources) -or (($AnalyticsRuleTemplate.resources).Count -lt 1)) {
-                throw "This template contains no Analytics Rules"
-            }
-        } catch {
-            $PSCmdlet.ThrowTerminatingError($_)
-        }
-
-        try {
-            if ($AnalyticsRuleTemplate.resources.type -ne "Microsoft.OperationalInsights/workspaces/providers/alertRules") {
-                throw "This template contains resources other than Analytics Rules"
+                throw "This template contains no Analytics Rules or resources"
             }
         } catch {
             $PSCmdlet.ThrowTerminatingError($_)
@@ -222,8 +214,11 @@ function Convert-SentinelARArmToYaml {
         #region ART
         $resourceCounter = 0
 
-        foreach ($resource in $AnalyticsRuleTemplate.resources) {
-
+        foreach ($resource in ( $AnalyticsRuleTemplate.resources | Where-Object { $_.type -eq "Microsoft.OperationalInsights/workspaces/providers/alertRules" } ) ) {
+            if ($resource.kind -ne "Scheduled") {
+                Write-Warning "Analytics Rule $($resource.properties.displayName) is using an unsupported type `"$($resource.kind)`". Only type `"Scheduled`" is supported."
+                Continue
+            }
             # Get the id of the analytic rule
 
             if ($resource.id -match "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}") {
@@ -281,9 +276,9 @@ function Convert-SentinelARArmToYaml {
             $AnalyticsRule = $resource | Select-Object -ExpandProperty properties
             # Add the id and kind from the ARM template
             $AnalyticsRule = $AnalyticsRule | Add-Member -MemberType NoteProperty -Name "id" -Value $Id -PassThru -Force
-            $AnalyticsRule = $AnalyticsRule | Add-Member -MemberType NoteProperty -Name "kind" -Value $AnalyticsRuleTemplate.resources.kind -PassThru -Force
+            $AnalyticsRule = $AnalyticsRule | Add-Member -MemberType NoteProperty -Name "kind" -Value $resource.kind -PassThru -Force
             # Add version if not present
-            if ( [string]::IsNullOrWhiteSpace($AnalyticsRuleTemplate.resources.properties.templateVersion) ) {
+            if ( [string]::IsNullOrWhiteSpace($resource.properties.templateVersion) ) {
                 $AnalyticsRule = $AnalyticsRule | Add-Member -MemberType NoteProperty -Name "version" -Value "1.0.0" -PassThru -Force
             }
             # Remove values that are not needed
