@@ -538,7 +538,7 @@ Describe "Simple example tests" {
             Remove-Item -Path "TestDrive:/Multiple/*" -Include *.yaml -Force
         }
         It "No Pipeline and Outfile" {
-            Convert-SentinelARArmToYaml -Filename "TestDrive:/Multiple/ScheduledMultiple.json" -OutFile "TestDrive:/Multiple/ScheduledMultiple.yaml" -Verbose
+            Convert-SentinelARArmToYaml -Filename "TestDrive:/Multiple/ScheduledMultiple.json" -OutFile "TestDrive:/Multiple/ScheduledMultiple.yaml"
             Get-ChildItem -Path "TestDrive:/Multiple/*" -Include *.yaml | Should -HaveCount 2
         }
         It "No Pipeline and UseOriginalFilename" {
