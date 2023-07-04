@@ -572,5 +572,8 @@ AfterAll {
     if (-not $RetainTestFiles) {
         Remove-Item -Path "$PSScriptRoot/testOutput/" -Recurse -Force
     }
+    if ( Get-Module -Name SentinelARConverter ) {
+        Remove-Module -Name SentinelARConverter -Force
+    }
 }
 
