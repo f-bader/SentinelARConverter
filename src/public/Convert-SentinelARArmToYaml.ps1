@@ -104,7 +104,7 @@ function Convert-SentinelARArmToYaml {
         [string]$OutFile,
 
         [Parameter(ParameterSetName = 'UseOriginalFilename')]
-        [switch]$UseOriginalFilename = $false,
+        [switch]$UseOriginalFilename,
 
         [Parameter(ParameterSetName = 'Pipeline')]
         [Parameter(ParameterSetName = 'UseDisplayNameAsFilename')]
@@ -254,10 +254,16 @@ function Convert-SentinelARArmToYaml {
                     $NewFileName = $Id + '.yaml'
                 }
 
-                $OutFile = Join-Path $FileObject.Directory $NewFileName
-            } elseif ($PsCmdlet.ParameterSetName -in ("Path") -or ($PsCmdlet.ParameterSetName -in ("Pipeline") -and $OutFile -and -not $Directory)) {
+                $OutFilePath = Join-Path $FileObject.Directory $NewFileName
+            } elseif ( $PsCmdlet.ParameterSetName -in ("Pipeline","Path") -and $OutFile ) {
+                $DirectoryName = [System.IO.Path]::GetDirectoryName($OutFile)
+                $FileExtension = [System.IO.Path]::GetExtension($OutFile)
+                $FileNameWithoutExtension = [System.IO.Path]::GetFileNameWithoutExtension($OutFile)
                 if ($resourceCounter -gt 0) {
-                    $OutFile = $OutFile -replace ".yaml", "_$resourceCounter.yaml"
+                    $NewFileName = "$($FileNameWithoutExtension)_$($resourceCounter)$($FileExtension)"
+                    $OutFilePath = Join-Path $DirectoryName $NewFileName
+                } else {
+                    $OutFilePath = Join-Path $DirectoryName ([System.IO.Path]::GetFileName($OutFile))
                 }
             } elseif ($PsCmdlet.ParameterSetName -in ("Pipeline") -and ($UseDisplayNameAsFilename -or $UseIdAsFilename)) {
                 if ($UseDisplayNameAsFilename) {
@@ -270,7 +276,7 @@ function Convert-SentinelARArmToYaml {
                     # Use id as of the Analytics Rule filename
                     $NewFileName = $Id + '.yaml'
                 }
-                $OutFile = Join-Path -Path $Directory -ChildPath $NewFileName
+                $OutFilePath = Join-Path -Path $Directory -ChildPath $NewFileName
             }
             #endregion
 
@@ -325,8 +331,9 @@ function Convert-SentinelARArmToYaml {
 
             # Write the YAML to a file or return the YAML
             if ($OutFile) {
-                $AnalyticsRuleYAML | Out-File $OutFile -NoClobber:(-not $Force) -Encoding utf8
-                Write-Verbose "Output written to file: `"$OutFile`""
+            if ($OutFilePath) {
+                $AnalyticsRuleYAML | Out-File $OutFilePath -NoClobber:(-not $Force) -Encoding utf8
+                Write-Verbose "Output written to file: `"$OutFilePath`""
             } else {
                 $AnalyticsRuleYAML
             }
