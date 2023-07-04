@@ -11,6 +11,9 @@ param(
 )
 
 BeforeDiscovery {
+    if (Get-Module SentinelARConverter) {
+        Remove-Module SentinelARConverter -Force
+    }
     # Import the module for the tests
     $ModuleRoot = $PSScriptRoot | Split-Path -Parent
     Import-Module -Name "$ModuleRoot/src/SentinelARConverter.psd1"
@@ -199,7 +202,6 @@ Describe "Single File Testcases" {
             }
 
             Convert-SentinelARArmToYaml @convertSentinelARArmToYamlSplat
-
             $convertedExampleFilePath | Should -Exist
         }
 
@@ -501,6 +503,67 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateConte
             $output[0] | Should -Not -BeNullOrEmpty
             $output[1] | Should -Not -BeNullOrEmpty
             Get-ChildItem -Path $PSScriptRoot -Recurse -Filter $convertedExampleFileName | Should -BeNullOrEmpty
+        }
+    }
+}
+
+Describe "Simple example tests" {
+    Context "Single example tests" -Tag Integration {
+        BeforeAll {
+            New-Item TestDrive:/Single/ -ItemType Directory | Out-Null
+            Copy-Item -Path $exampleFilePath -Destination TestDrive:/Single/
+        }
+        AfterEach {
+            Remove-Item -Path "TestDrive:/Single/*" -Include *.yaml -Force
+        }
+        It "No Pipeline and OutFile" {
+            Convert-SentinelARArmToYaml -Filename "TestDrive:/Single/Scheduled.json" -OutFile "TestDrive:/Single/Scheduled.yaml"
+            Get-ChildItem -Path "TestDrive:/Single/*" -Include *.yaml | Should -HaveCount 1
+        }
+        It "No Pipeline and UseOriginalFilename" {
+            Convert-SentinelARArmToYaml -Filename "TestDrive:/Single/Scheduled.json" -UseOriginalFilename
+            Get-ChildItem -Path "TestDrive:/Single/*" -Include *.yaml | Should -HaveCount 1
+        }
+        It "Pipeline and OutFile" {
+            Get-Content -Path "TestDrive:/Single/Scheduled.json" -Raw | Convert-SentinelARArmToYaml -OutFile "TestDrive:/Single/Scheduled.yaml"
+            Get-ChildItem -Path "TestDrive:/Single/*" -Include *.yaml | Should -HaveCount 1
+        }
+    }
+    Context "Multiple example tests" -Tag Integration {
+        BeforeAll {
+            New-Item TestDrive:/Multiple/ -ItemType Directory | Out-Null
+            Copy-Item -Path $exampleMultipleFilePath -Destination TestDrive:/Multiple/
+        }
+        AfterEach {
+            Remove-Item -Path "TestDrive:/Multiple/*" -Include *.yaml -Force
+        }
+        It "No Pipeline and Outfile" {
+            Convert-SentinelARArmToYaml -Filename "TestDrive:/Multiple/ScheduledMultiple.json" -OutFile "TestDrive:/Multiple/ScheduledMultiple.yaml" -Verbose
+            Get-ChildItem -Path "TestDrive:/Multiple/*" -Include *.yaml | Should -HaveCount 2
+        }
+        It "No Pipeline and UseOriginalFilename" {
+            Convert-SentinelARArmToYaml -Filename "TestDrive:/Multiple/ScheduledMultiple.json" -UseOriginalFilename
+            Get-ChildItem -Path "TestDrive:/Multiple/*" -Include *.yaml | Should -HaveCount 2
+        }
+        It "No Pipeline and UseDisplayNameAsFilename" {
+            Convert-SentinelARArmToYaml -Filename "TestDrive:/Multiple/ScheduledMultiple.json" -UseDisplayNameAsFilename
+            Get-ChildItem -Path "TestDrive:/Multiple/*" -Include *.yaml | Should -HaveCount 2
+        }
+        It "No Pipeline and UseIdAsFilename" {
+            Convert-SentinelARArmToYaml -Filename "TestDrive:/Multiple/ScheduledMultiple.json" -UseIdAsFilename
+            Get-ChildItem -Path "TestDrive:/Multiple/*" -Include *.yaml | Should -HaveCount 2
+        }
+        It "Pipeline and OutFile" {
+            Get-Content -Path "TestDrive:/Multiple/ScheduledMultiple.json" -Raw | Convert-SentinelARArmToYaml -OutFile "TestDrive:/Multiple/ScheduledMultiple.yaml"
+            Get-ChildItem -Path "TestDrive:/Multiple/*" -Include *.yaml | Should -HaveCount 2
+        }
+        It "Pipeline and UseDisplayNameAsFilename" {
+            Get-Content -Path "TestDrive:/Multiple/ScheduledMultiple.json" -Raw | Convert-SentinelARArmToYaml -UseDisplayNameAsFilename -Directory "TestDrive:/Multiple/"
+            Get-ChildItem -Path "TestDrive:/Multiple/*" -Include *.yaml | Should -HaveCount 2
+        }
+        It "Pipeline and UseIdAsFilename" {
+            Get-Content -Path "TestDrive:/Multiple/ScheduledMultiple.json" -Raw | Convert-SentinelARArmToYaml -UseIdAsFilename -Directory "TestDrive:/Multiple/"
+            Get-ChildItem -Path "TestDrive:/Multiple/*" -Include *.yaml | Should -HaveCount 2
         }
     }
 }
