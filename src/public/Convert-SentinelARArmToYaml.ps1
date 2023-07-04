@@ -255,7 +255,7 @@ function Convert-SentinelARArmToYaml {
                 }
 
                 $OutFilePath = Join-Path $FileObject.Directory $NewFileName
-            } elseif ( $PsCmdlet.ParameterSetName -in ("Pipeline","Path") -and $OutFile ) {
+            } elseif ( $PsCmdlet.ParameterSetName -in ("Pipeline", "Path") -and $OutFile ) {
                 $DirectoryName = [System.IO.Path]::GetDirectoryName($OutFile)
                 $FileExtension = [System.IO.Path]::GetExtension($OutFile)
                 $FileNameWithoutExtension = [System.IO.Path]::GetFileNameWithoutExtension($OutFile)
@@ -330,7 +330,6 @@ function Convert-SentinelARArmToYaml {
             #endregion ART
 
             # Write the YAML to a file or return the YAML
-            if ($OutFile) {
             if ($OutFilePath) {
                 $AnalyticsRuleYAML | Out-File $OutFilePath -NoClobber:(-not $Force) -Encoding utf8
                 Write-Verbose "Output written to file: `"$OutFilePath`""
