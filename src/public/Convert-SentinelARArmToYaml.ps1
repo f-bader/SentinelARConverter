@@ -127,6 +127,8 @@ function Convert-SentinelARArmToYaml {
             ParameterSetName = 'UseIdAsFilename')]
         [Parameter(
             ParameterSetName = 'StdOut')]
+        [Parameter(
+            ParameterSetName = 'Pipeline')]
         [switch]$Force = $false
     )
 
