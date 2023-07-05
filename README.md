@@ -22,6 +22,17 @@ Convert-SentinelARArmToYaml -Filename "C:\Users\User\Downloads\Azure_Sentinel_an
 
 This will create a new file named `Azure_Sentinel_analytic_rule.yaml` without any other interaction.
 
+```PowerShell
+Convert-SentinelARArmToYaml -Filename "C:\Users\User\Downloads\Azure_Sentinel_analytic_rule.json" -UseDisplayNameAsFilename
+```
+
+This will create a new file named `DisplayNameOfTheAnalyticsRule.yaml` without any other interaction.
+
+```PowerShell
+Convert-SentinelARArmToYaml -Filename "C:\Users\User\Downloads\Azure_Sentinel_analytic_rule.json" -UseIdAsFilename
+```
+
+This will create a new file named `UUID-OfTheAnalyticsRule.yaml` without any other interaction.
 
 ```PowerShell
 Get-Content "C:\Users\User\Downloads\Azure_Sentinel_analytic_rule.json" | Convert-SentinelARArmToYaml -OutFile "C:\Users\User\Downloads\Azure_Sentinel_analytic_rule.yaml"
@@ -34,6 +45,11 @@ Get-Content "C:\Users\User\Downloads\Azure_Sentinel_analytic_rule.json" | Conver
 ```
 
 If no output file path is given, the output will be send to `stdout`
+
+All those work regardless of the content of the ARM file. If the ARM template contains is more than one Analytics Rule all rules are converted. \
+If you use the `-UseOriginalFilename` or `-OutFile` all analytics rules after the first are named `filename_n.yaml`
+
+![Workflow to export multiple Analytic Rules from Sentinel and convert them to YAML in one go.](/images/Convert-SentinelARArmToYaml-Multiple.gif)
 
 ### YAML to ARM
 
