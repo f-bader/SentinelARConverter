@@ -9,6 +9,7 @@ on:
 
 jobs:
   test:
+    name: Validate module integrity
     runs-on: ubuntu-latest
 
     steps:
