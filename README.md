@@ -56,6 +56,13 @@ Get-Content "C:\Users\User\Downloads\Azure_Sentinel_analytic_rule.yaml" | Conver
 
 If no output file path is given, the output will be send to `stdout`
 
-## Known limitations
+## Changelog
 
-Currently it's not possible to convert a ARM template file that contains more than one Analytics Rule to YAML.
+### v2.0.0 
+
+* FEATURE: Adds processing of multiple analytic rules per ARM-template
+* BREAKING: Changes behavior from OutFile from a filename to a prefix when converting multiple resources
+
+### v1.2.2
+
+* FEATURE: Always add a version property. Default 1.0.0
