@@ -29,7 +29,7 @@ If set, the output file will be saved with the id of the Analytics Rule as filen
 The extension will be replaced with .json
 
 .PARAMETER APIVersion
-Set API version of the ARM template. Default is "2022-11-01"
+Set API version of the ARM template. Default is "2022-11-01-preview"
 
 .EXAMPLE
 Convert-SentinelARYamlToArm -Filename "C:\Temp\MyRule.yaml" -OutFile "C:\Temp\MyRule.json"
@@ -82,7 +82,7 @@ function Convert-SentinelARYamlToArm {
 
         [ValidatePattern('^\d{4}-\d{2}-\d{2}(-preview)?$')]
         [Parameter(Mandatory = $false)]
-        [string]$APIVersion = "2022-11-01"
+        [string]$APIVersion = "2022-11-01-preview"
     )
 
     begin {
