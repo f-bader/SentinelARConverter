@@ -194,10 +194,19 @@ function Convert-SentinelARArmToYaml {
         # Use parsed pipeline data if no file was specified (default)
         try {
             if ($PsCmdlet.ParameterSetName -eq "Pipeline") {
-                $AnalyticsRuleTemplate = $FullARM | ConvertFrom-Json -Depth 99 -Verbose
+                if ($PSVersionTable.PSEdition -ne "Core") {
+                    $AnalyticsRuleTemplate = $FullARM | ConvertFrom-Json -Verbose
+                } else {
+                    $AnalyticsRuleTemplate = $FullARM | ConvertFrom-Json -Depth 99
+                }
             } else {
                 Write-Verbose "Read file `"$Filename`""
-                $AnalyticsRuleTemplate = Get-Content $Filename | ConvertFrom-Json -Depth 99 -Verbose
+
+                if ($PSVersionTable.PSEdition -ne "Core") {
+                    $AnalyticsRuleTemplate = Get-Content $Filename | ConvertFrom-Json -Verbose
+                } else {
+                    $AnalyticsRuleTemplate = Get-Content $Filename | ConvertFrom-Json -Depth 99 -Verbose
+                }
             }
         } catch {
             throw "Could not convert source file. JSON might be corrupted"
