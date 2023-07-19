@@ -74,6 +74,10 @@ If no output file path is given, the output will be send to `stdout`
 
 ## Changelog
 
+### v2.0.2
+
+* FIX: Fixed Windows PowerShell support
+
 ### v2.0.1
 
 * FIX: Updated ARM API version to 2022-11-01-preview
