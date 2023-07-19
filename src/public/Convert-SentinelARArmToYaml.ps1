@@ -213,7 +213,7 @@ function Convert-SentinelARArmToYaml {
         }
 
         try {
-            if ((-not $AnalyticsRuleTemplate.resources) -or (($AnalyticsRuleTemplate.resources).Count -lt 1)) {
+            if ( (-not $AnalyticsRuleTemplate.resources) ) {
                 throw "This template contains no Analytics Rules or resources"
             }
         } catch {
