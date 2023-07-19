@@ -10,7 +10,11 @@ on:
 jobs:
   test:
     name: Validate module integrity
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
 
     steps:
       - uses: actions/checkout@v3
@@ -23,12 +27,26 @@ jobs:
           Set-PSRepository PSGallery -InstallationPolicy Trusted
           Install-Module powershell-yaml, PSScriptAnalyzer -Force
 
+      - name: Install Windows PowerShell dependencies
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module powershell-yaml, PSScriptAnalyzer -Force
+
       - name: Run PSScriptAnalyzer
         shell: pwsh
         run: |
           Invoke-ScriptAnalyzer -Path .\src -Settings PSGallery -Recurse -ReportSummary -Severity Error
 
-      - name: Run Tests
+      - name: Run Tests using Windows PowerShell
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $config = New-PesterConfiguration -Hashtable @{TestResult = @{Enabled = $true }; Run = @{Exit = $false }; Output = @{ Verbosity = 'Detailed' }}
+          Invoke-Pester -Configuration $config
+
+      - name: Run Tests using PowerShell
         shell: pwsh
         run: |
           $config = New-PesterConfiguration -Hashtable @{TestResult = @{Enabled = $true }; Run = @{Exit = $false }; Output = @{ Verbosity = 'Detailed' }}
