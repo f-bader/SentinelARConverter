@@ -1,10 +1,10 @@
 param(
     [Parameter()]
     [String]
-    $exampleFilePath = "$PSScriptRoot/examples/Scheduled.json",
+    $exampleFilePath = "./tests/examples/Scheduled.json",
     [Parameter()]
     [String]
-    $exampleMultipleFilePath = "$PSScriptRoot/examples/ScheduledMultiple.json",
+    $exampleMultipleFilePath = "./tests/examples/ScheduledMultiple.json",
     [Parameter()]
     [Switch]
     $RetainTestFiles = $false
@@ -15,22 +15,22 @@ BeforeDiscovery {
         Remove-Module SentinelARConverter -Force
     }
     # Import the module for the tests
-    $ModuleRoot = $PSScriptRoot | Split-Path -Parent
+    $ModuleRoot = Split-Path -Path ./tests -Parent
     Import-Module -Name "$ModuleRoot/src/SentinelARConverter.psd1"
 
     # Multiple ART
     $DiscoveryARMTemplateMultipleContent = Get-Content $exampleMultipleFilePath -Raw
-    $DiscoveryconvertedMultipleTemplateContent = $DiscoveryARMTemplateMultipleContent | ConvertFrom-Json -Depth 99
+    $DiscoveryconvertedMultipleTemplateContent = $DiscoveryARMTemplateMultipleContent | ConvertFrom-Json
 }
 
 BeforeAll {
 
     # Import the module for the tests
-    $ModuleRoot = $PSScriptRoot | Split-Path -Parent
+    $ModuleRoot = Split-Path -Path ./tests -Parent
     Import-Module -Name "$ModuleRoot/src/SentinelARConverter.psd1"
 
     # Create a test output folder
-    New-Item -ItemType Directory -Path "$PSScriptRoot/testOutput" -Force | Out-Null
+    New-Item -ItemType Directory -Path "./tests/testOutput" -Force | Out-Null
 
     # Do fileconversion
     # Single ART
@@ -47,20 +47,20 @@ BeforeAll {
     $outputMultiplePath = $exampleMultipleFilePath -replace "/examples/", "/testOutput/"
     $convertedMultipleExampleFilePath -match "\w*\.yaml$"
     $convertedMultipleExampleFileName = $matches[0]
-    $convertedMultipleTemplateContent = $ARMTemplateMultipleContent | ConvertFrom-Json -Depth 99
+    $convertedMultipleTemplateContent = $ARMTemplateMultipleContent | ConvertFrom-Json
 }
 
 Describe "Convert-SentinelARArmToYaml" {
 
     BeforeEach {
-        Get-ChildItem $PSScriptRoot/testOutput/ | Remove-Item -Recurse -Force
-        Get-ChildItem $PSScriptRoot/examples -Filter *.yaml | Remove-Item -Force
+        Get-ChildItem ./tests/testOutput/ | Remove-Item -Recurse -Force
+        Get-ChildItem ./tests/examples -Filter *.yaml | Remove-Item -Force
     }
 
     AfterEach {
         if (-not $RetainTestFiles) {
-            Get-ChildItem $PSScriptRoot/testOutput/ | Remove-Item -Recurse -Force
-            Get-ChildItem -Path $PSScriptRoot/examples -Filter *.yaml | Remove-Item -Force
+            Get-ChildItem ./tests/testOutput/ | Remove-Item -Recurse -Force
+            Get-ChildItem -Path ./tests/examples -Filter *.yaml | Remove-Item -Force
         }
     }
 
@@ -74,7 +74,7 @@ Describe "Convert-SentinelARArmToYaml" {
         It "Throws an error" {
             {
                 $ARMTemplateContent |
-                ConvertFrom-Json -Depth 99 |
+                ConvertFrom-Json |
                 Select-Object "`$schema", "contentVersion", "parameters" |
                 ConvertTo-Json -Depth 99 |
                 Convert-SentinelARArmToYaml -OutFile $outputPath
@@ -84,7 +84,7 @@ Describe "Convert-SentinelARArmToYaml" {
 
     Context "If an invalid template id is provided in the analytics rule resources block" -Tag Unit {
         It "Creates a new guid" {
-            Convert-SentinelARArmToYaml -Filename "$PSScriptRoot/examples/ScheduledBadGuid.json" -OutFile $outputPath
+            Convert-SentinelARArmToYaml -Filename "./tests/examples/ScheduledBadGuid.json" -OutFile $outputPath
 
             $outputPath | Should -Not -FileContentMatch 'id: z-4a5f-4d27-8a26-b60a7952d5af'
         }
@@ -92,7 +92,7 @@ Describe "Convert-SentinelARArmToYaml" {
 
     Context "If redundant ARM Properties are present in the rules" -Tag Unit {
         It "Removes the redundant ARM properties" {
-            $outputPath = "$PSScriptRoot/testOutput/$convertedExampleFileName"
+            $outputPath = "./tests/testOutput/$convertedExampleFileName"
 
             $ARMTemplateContent | Convert-SentinelARArmToYaml -OutFile $outputPath
 
@@ -103,7 +103,7 @@ Describe "Convert-SentinelARArmToYaml" {
     Context "When the template contains timespan values" -Tag Unit {
 
         It "Properly converts the units" {
-            $outputPath = "$PSScriptRoot/testOutput/$convertedExampleFileName"
+            $outputPath = "./tests/testOutput/$convertedExampleFileName"
 
             $ARMTemplateContent | Convert-SentinelARArmToYaml -OutFile $outputPath
 
@@ -116,7 +116,7 @@ Describe "Convert-SentinelARArmToYaml" {
     Context "When specific propertynames/comparison properties are found on AR objects" -Tag Unit {
 
         BeforeDiscovery {
-            $convertedJSON = Get-Content -Path $exampleFilePath -Raw | ConvertFrom-Json -Depth 99 -AsHashtable
+            $convertedJSON = Get-Content -Path $exampleFilePath -Raw | ConvertFrom-Json
             foreach ($resource in $convertedJSON["resources"]) {
                 if (-not $resource.properties.ContainsKey("triggerOperator")) {
                     Write-Warning "This template does not contain a triggerOperator property. Cannot test conversion of comparison operators."
@@ -171,14 +171,14 @@ Describe "Convert-SentinelARArmToYaml" {
 Describe "Single File Testcases" {
 
     BeforeEach {
-        Get-ChildItem $PSScriptRoot/testOutput/ | Remove-Item -Recurse -Force
-        Get-ChildItem $PSScriptRoot/examples -Filter *.yaml | Remove-Item -Force
+        Get-ChildItem ./tests/testOutput/ | Remove-Item -Recurse -Force
+        Get-ChildItem ./tests/examples -Filter *.yaml | Remove-Item -Force
     }
 
     AfterEach {
         if (-not $RetainTestFiles) {
-            Get-ChildItem $PSScriptRoot/testOutput/ | Remove-Item -Recurse -Force
-            Get-ChildItem -Path $PSScriptRoot/examples -Filter *.yaml | Remove-Item -Force
+            Get-ChildItem ./tests/testOutput/ | Remove-Item -Recurse -Force
+            Get-ChildItem -Path ./tests/examples -Filter *.yaml | Remove-Item -Force
         }
     }
 
@@ -186,7 +186,7 @@ Describe "Single File Testcases" {
         It "Converts a Scheduled Query Alert Sentinel Alert Rule ARM template to a YAML-file" {
             $convertSentinelARArmToYamlSplat = @{
                 Filename = $exampleFilePath
-                OutFile  = "$PSScriptRoot/testOutput/$convertedExampleFileName"
+                OutFile  = "./tests/testOutput/$convertedExampleFileName"
             }
 
             Convert-SentinelARArmToYaml @convertSentinelARArmToYamlSplat
@@ -222,27 +222,27 @@ Describe "Single File Testcases" {
     Context "If UseDisplayNameAsFilename was passed" -Tag Integration {
         It "Creates a yaml file in the same folder as the ARM template with the display name as filename" {
             $convertSentinelARArmToYamlSplat = @{
-                Filename                 = "$PSScriptRoot/examples/Scheduled.json"
+                Filename                 = "./tests/examples/Scheduled.json"
                 UseDisplayNameAsFilename = $true
             }
             Convert-SentinelARArmToYaml @convertSentinelARArmToYamlSplat
 
-            "$PSScriptRoot/examples/AzureWAFMatchingForLog4jVulnCVE202144228.yaml" | Should -Exist
-            Remove-Item "$PSScriptRoot/examples/AzureWAFMatchingForLog4jVulnCVE202144228.yaml" -Force
+            "./tests/examples/AzureWAFMatchingForLog4jVulnCVE202144228.yaml" | Should -Exist
+            Remove-Item "./tests/examples/AzureWAFMatchingForLog4jVulnCVE202144228.yaml" -Force
         }
     }
 
     Context "If UseIdAsFilename was passed" -Tag Integration {
         It "Creates a yaml file in the same folder as the ARM template with the id as filename" {
             $convertSentinelARArmToYamlSplat = @{
-                Filename        = "$PSScriptRoot/examples/Scheduled.json"
+                Filename        = "./tests/examples/Scheduled.json"
                 UseIdAsFilename = $true
             }
 
             Convert-SentinelARArmToYaml @convertSentinelARArmToYamlSplat
 
-            "$PSScriptRoot/examples/6bb8e22c-4a5f-4d27-8a26-b60a7952d5af.yaml" | Should -Exist
-            Remove-Item "$PSScriptRoot/examples/6bb8e22c-4a5f-4d27-8a26-b60a7952d5af.yaml" -Force
+            "./tests/examples/6bb8e22c-4a5f-4d27-8a26-b60a7952d5af.yaml" | Should -Exist
+            Remove-Item "./tests/examples/6bb8e22c-4a5f-4d27-8a26-b60a7952d5af.yaml" -Force
         }
     }
     Context "If an ARM template file content is passed via pipeline" -Tag Integration {
@@ -264,7 +264,7 @@ Describe "Single File Testcases" {
 
             $output = (Get-Content -Path $convertSentinelARArmToYamlSplat.Filename -Raw | Convert-SentinelARArmToYaml)
             $output | Should -Not -BeNullOrEmpty
-            Get-ChildItem -Path $PSScriptRoot -Recurse -Filter $convertedExampleFileName | Should -BeNullOrEmpty
+            Get-ChildItem -Path ./tests -Recurse -Filter $convertedExampleFileName | Should -BeNullOrEmpty
         }
     }
 }
@@ -272,13 +272,13 @@ Describe "Single File Testcases" {
 Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateContent.resources).Count -lt 2) {
 
     BeforeEach {
-        Get-ChildItem $PSScriptRoot/testOutput/ -Filter *.yaml | Remove-Item -Recurse -Force
-        Get-ChildItem $PSScriptRoot/examples -Filter *.yaml | Remove-Item -Force
+        Get-ChildItem ./tests/testOutput/ -Filter *.yaml | Remove-Item -Recurse -Force
+        Get-ChildItem ./tests/examples -Filter *.yaml | Remove-Item -Force
     }
     AfterEach {
         if (-not $RetainTestFiles) {
-            Get-ChildItem $PSScriptRoot/testOutput/ | Remove-Item -Recurse -Force
-            Get-ChildItem -Path $PSScriptRoot/examples -Filter *.yaml | Remove-Item -Force
+            Get-ChildItem ./tests/testOutput/ | Remove-Item -Recurse -Force
+            Get-ChildItem -Path ./tests/examples -Filter *.yaml | Remove-Item -Force
         }
     }
 
@@ -291,7 +291,7 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateConte
         BeforeEach {
             $convertSentinelARArmToYamlSplat = @{
                 Filename = $exampleMultipleFilePath
-                OutFile  = "$PSScriptRoot/testOutput/$convertedMultipleExampleFileName"
+                OutFile  = "./tests/testOutput/$convertedMultipleExampleFileName"
             }
             Convert-SentinelARArmToYaml @convertSentinelARArmToYamlSplat
         }
@@ -336,8 +336,8 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateConte
 
         AfterAll {
             if (-not $RetainTestFiles) {
-                Get-ChildItem $PSScriptRoot/testOutput/ | Remove-Item -Recurse -Force
-                Get-ChildItem -Path $PSScriptRoot/examples -Filter *.yaml | Remove-Item -Force
+                Get-ChildItem ./tests/testOutput/ | Remove-Item -Recurse -Force
+                Get-ChildItem -Path ./tests/examples -Filter *.yaml | Remove-Item -Force
             }
         }
         It "Creates a yaml file in the same folder as the ARM template (<_>)" -ForEach $Discoveryfilenames {
@@ -419,7 +419,7 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateConte
         BeforeEach {
             $convertSentinelARArmToYamlSplat = @{
                 Filename = $exampleMultipleFilePath
-                OutFile  = "$PSScriptRoot/testOutput/$convertedMultipleExampleFileName"
+                OutFile  = "./tests/testOutput/$convertedMultipleExampleFileName"
             }
             Get-Content $convertSentinelARArmToYamlSplat.Filename -Raw | Convert-SentinelARArmToYaml -OutFile $convertSentinelARArmToYamlSplat.OutFile -Force
         }
@@ -442,7 +442,7 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateConte
             }
         }
         BeforeEach {
-            Get-Content $exampleMultipleFilePath -Raw | Convert-SentinelARArmToYaml -UseDisplayNameAsFilename -Directory "$PSScriptRoot/testOutput"
+            Get-Content $exampleMultipleFilePath -Raw | Convert-SentinelARArmToYaml -UseDisplayNameAsFilename -Directory "./tests/testOutput"
             $exampleParent = $exampleMultipleFilePath | Split-Path -Parent
             $testOutputPath = $exampleMultipleFilePath | Split-Path -Parent | Split-Path -Parent | Join-Path -ChildPath "testOutput"
 
@@ -469,7 +469,7 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateConte
             }
         }
         BeforeEach {
-            Get-Content $exampleMultipleFilePath -Raw | Convert-SentinelARArmToYaml -UseIdAsFilename -Directory "$PSScriptRoot/testOutput"
+            Get-Content $exampleMultipleFilePath -Raw | Convert-SentinelARArmToYaml -UseIdAsFilename -Directory "./tests/testOutput"
             $exampleParent = $exampleMultipleFilePath | Split-Path -Parent
             $testOutputPath = $exampleMultipleFilePath | Split-Path -Parent | Split-Path -Parent | Join-Path -ChildPath "testOutput"
 
@@ -493,7 +493,7 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateConte
             }
             $output = (Get-Content -Path $convertSentinelARArmToYamlSplat.Filename -Raw | Convert-SentinelARArmToYaml)
             $output | Should -Not -BeNullOrEmpty
-            Get-ChildItem -Path $PSScriptRoot -Recurse -Filter $convertedExampleFileName | Should -BeNullOrEmpty
+            Get-ChildItem -Path ./tests -Recurse -Filter $convertedExampleFileName | Should -BeNullOrEmpty
         }
         It "Outputs YAML to the console (multi alert)" {
             $convertSentinelARArmToYamlSplat = @{
@@ -502,7 +502,7 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateConte
             $output = (Get-Content -Path $convertSentinelARArmToYamlSplat.Filename -Raw | Convert-SentinelARArmToYaml)
             $output[0] | Should -Not -BeNullOrEmpty
             $output[1] | Should -Not -BeNullOrEmpty
-            Get-ChildItem -Path $PSScriptRoot -Recurse -Filter $convertedExampleFileName | Should -BeNullOrEmpty
+            Get-ChildItem -Path ./tests -Recurse -Filter $convertedExampleFileName | Should -BeNullOrEmpty
         }
     }
 }
@@ -570,7 +570,7 @@ Describe "Simple example tests" {
 
 AfterAll {
     if (-not $RetainTestFiles) {
-        Remove-Item -Path "$PSScriptRoot/testOutput/" -Recurse -Force
+        Remove-Item -Path "./tests/testOutput/" -Recurse -Force
     }
     if ( Get-Module -Name SentinelARConverter ) {
         Remove-Module -Name SentinelARConverter -Force
