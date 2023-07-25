@@ -41,34 +41,32 @@ Convert-SentinelARYamlToArm -Filename "C:\Temp\MyRule.yaml" -OutFile "C:\Temp\My
 function Convert-SentinelARYamlToArm {
     [CmdletBinding(DefaultParameterSetName = 'StdOut')]
     param (
-        [Parameter(Mandatory = $true,
+        [Parameter(Mandatory,
             Position = 0,
             ParameterSetName = 'Path')]
-        [Parameter(Mandatory = $true,
+        [Parameter(Mandatory,
             Position = 0,
             ParameterSetName = 'UseOriginalFilename')]
-        [Parameter(Mandatory = $true,
+        [Parameter(Mandatory,
             Position = 0,
             ParameterSetName = 'UseDisplayNameAsFilename')]
-        [Parameter(Mandatory = $true,
+        [Parameter(Mandatory,
             Position = 0,
             ParameterSetName = 'UseIdAsFilename')]
-        [Parameter(Mandatory = $true,
+        [Parameter(Mandatory,
             Position = 0,
             ParameterSetName = 'StdOut')]
         [string]$Filename,
 
         [Alias('Json')]
-        [Parameter(Mandatory = $true,
-            ValueFromPipeline = $true,
+        [Parameter(Mandatory,
+            ValueFromPipeline,
             ParameterSetName = 'Pipeline',
             Position = 0)]
         [array]$Data,
 
-        [Parameter(Mandatory = $false,
-            ParameterSetName = 'Path')]
-        [Parameter(Mandatory = $false,
-            ParameterSetName = 'Pipeline')]
+        [Parameter(ParameterSetName = 'Path')]
+        [Parameter(ParameterSetName = 'Pipeline')]
         [string]$OutFile,
 
         [Parameter(ParameterSetName = 'UseOriginalFilename')]
@@ -81,13 +79,17 @@ function Convert-SentinelARYamlToArm {
         [switch]$UseIdAsFilename,
 
         [ValidatePattern('^\d{4}-\d{2}-\d{2}(-preview)?$')]
-        [Parameter(Mandatory = $false)]
+        [Parameter()]
         [string]$APIVersion = "2022-11-01-preview"
     )
 
     begin {
         if ($PsCmdlet.ParameterSetName -ne "Pipeline" ) {
-            if (-not (Test-Path $Filename) ) {
+            try {
+                if (-not (Test-Path $Filename)) {
+                    Write-Error -Exception
+                }
+            } catch {
                 throw "File not found"
             }
         }
@@ -110,12 +112,12 @@ function Convert-SentinelARYamlToArm {
                 Write-Verbose "Read file `"$Filename`""
                 $analyticRule = Get-Content $Filename | ConvertFrom-Yaml
             }
-        } catch { 
-            throw "Could not convert source file. YAML might be corrupted" 
+        } catch {
+            throw "Could not convert source file. YAML might be corrupted"
         }
 
         if ( [string]::IsNullOrWhiteSpace($analyticRule.name) -or [string]::IsNullOrWhiteSpace($analyticRule.id) ) {
-            throw "Analytics Rule name or id is empty. YAML might be corrupted" 
+            throw "Analytics Rule name or id is empty. YAML might be corrupted"
         }
 
         Write-Verbose "Convert Analytics Rule $($analyticRule.name) ($($analyticRule.id)) to ARM template"
@@ -265,7 +267,13 @@ function Convert-SentinelARYamlToArm {
         # Use ISO8601 format for timespan values
         $JSON = $JSON -replace '"([0-9]+)m"', '"PT$1M"' -replace '"([0-9]+)h"', '"PT$1H"' -replace '"([0-9]+)d"', '"P$1D"'
 
-        $ScheduleKind = $analyticRule.kind.substring(0, 1).toupper() + $analyticRule.kind.substring(1).tolower()
+        if ($analyticRule.kind -eq "Scheduled") {
+            $ScheduleKind = "Scheduled"
+        } elseif ($analyticRule.kind -eq "Nrt") {
+            $ScheduleKind = "NRT"
+        } else {
+            $ScheduleKind = $analyticRule.kind.substring(0, 1).toupper() + $analyticRule.kind.substring(1).tolower()
+        }
 
         $Result = $Template.Replace("<PROPERTIES>", $JSON)
         $Result = $Result.Replace("<TEMPLATEID>", $analyticRule.id)
