@@ -169,6 +169,7 @@ function Convert-SentinelARArmToYaml {
             "id"
             "alertRuleTemplateName", # id
             "displayName", # name
+            "version",
             "templateVersion", #version
             "kind",
             "description",
