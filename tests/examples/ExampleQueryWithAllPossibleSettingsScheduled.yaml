@@ -1,0 +1,65 @@
+id: 61aea564-feec-4cdf-9c47-0d5d0e53dc7f
+name: Example query with all possible settings
+version: 1.0.0
+kind: Scheduled
+description: This is used as a validation example for SentinelARConverter
+severity: Medium
+queryFrequency: 10h
+queryPeriod: 1d
+triggerOperator: gt
+triggerThreshold: 0
+tactics:
+  - Reconnaissance
+  - ResourceDevelopment
+relevantTechniques:
+  - T1597
+  - T1590
+  - T1592
+  - T1586
+  - T1588
+query: |-
+  SigninLogs
+  | where false
+suppressionEnabled: true
+startTimeUtc: 2023-07-26T11:00:00.0000000Z
+incidentConfiguration:
+  createIncident: true
+  groupingConfiguration:
+    enabled: true
+    reopenClosedIncident: true
+    lookbackDuration: 7d
+    matchingMethod: Selected
+    groupByEntities:
+      - Account
+      - IP
+    groupByAlertDetails: []
+    groupByCustomDetails:
+      - EntraIDTenantId
+eventGroupingSettings:
+  aggregationKind: AlertPerResult
+alertDetailsOverride:
+  alertDisplayNameFormat: Example query with all possible settings
+  alertDescriptionFormat: This is an example query with as much variance as possible. In this case the user {{UserDisplayName}} connected to Azure AD from {{IPAddress}} and used the following User Agent "{{UserAgent}}"
+  alertDynamicProperties:
+    - alertProperty: ConfidenceLevel
+      value: DurationMs
+customDetails:
+  EntraIDTenantId: AADTenantId
+entityMappings:
+  - entityType: Account
+    fieldMappings:
+      - identifier: FullName
+        columnName: UserPrincipalName
+  - entityType: IP
+    fieldMappings:
+      - identifier: Address
+        columnName: IPAddress
+  - entityType: Mailbox
+    fieldMappings:
+      - identifier: MailboxPrimaryAddress
+        columnName: UserPrincipalName
+  - entityType: CloudApplication
+    fieldMappings:
+      - identifier: Name
+        columnName: AppDisplayName
+suppressionDuration: 12h
