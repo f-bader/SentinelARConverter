@@ -592,12 +592,6 @@ Describe "Simple example tests" {
             Get-ChildItem -Path "TestDrive:/Content/*" -Include *.yaml | Should -HaveCount 1
             'TestDrive:/Content/NRT.yaml' | Should -FileContentMatch 'kind: NRT'
         }
-        It "Converts a Near Real Time Alert Sentinel Alert Rule ARM template to a YAML-file" {
-            Convert-SentinelARArmToYaml -Filename "TestDrive:/Content/NRT.json" -OutFile "TestDrive:/Content/NRT.yaml"
-            Get-ChildItem -Path "TestDrive:/Content/*" -Include *.yaml | Should -HaveCount 1
-            'TestDrive:/Content/NRT.yaml' | Should -FileContentMatch 'kind: NRT'
-        }
-
         It "Converts a mixed export of NRT and Scheduled to seperate YAML-files" {
             Convert-SentinelARArmToYaml -Filename "TestDrive:/Content/ScheduledNRTMultiple.json" -UseIdAsFilename
             Get-ChildItem -Path "TestDrive:/Content/*" -Include *.yaml | Should -HaveCount 2
