@@ -6,6 +6,12 @@ param(
     [String]
     $exampleMultipleFilePath = "./tests/examples/ScheduledMultiple.json",
     [Parameter()]
+    [String]
+    $NRTexampleFilePath = "./tests/examples/NRT.json",
+    [Parameter()]
+    [String]
+    $mixedMultipleExampleFilePath = "./tests/examples/ScheduledNRTMultiple.json",
+    [Parameter()]
     [Switch]
     $RetainTestFiles = $false
 )
@@ -564,6 +570,39 @@ Describe "Simple example tests" {
         It "Pipeline and UseIdAsFilename" {
             Get-Content -Path "TestDrive:/Multiple/ScheduledMultiple.json" -Raw | Convert-SentinelARArmToYaml -UseIdAsFilename -Directory "TestDrive:/Multiple/"
             Get-ChildItem -Path "TestDrive:/Multiple/*" -Include *.yaml | Should -HaveCount 2
+        }
+    }
+    Context "Content tests" -Tag Integration {
+        BeforeAll {
+            New-Item TestDrive:/Content/ -ItemType Directory | Out-Null
+            Copy-Item -Path $exampleFilePath -Destination TestDrive:/Content/
+            Copy-Item -Path $NRTexampleFilePath -Destination TestDrive:/Content/
+            Copy-Item -Path $mixedMultipleExampleFilePath -Destination TestDrive:/Content/
+        }
+        AfterEach {
+            Remove-Item -Path "TestDrive:/Content/*" -Include *.yaml -Force
+        }
+        It "Converts a Scheduled Query Rule Sentinel Alert Rule ARM template to a YAML-file" {
+            Convert-SentinelARArmToYaml -Filename "TestDrive:/Content/Scheduled.json" -OutFile "TestDrive:/Content/Scheduled.yaml"
+            Get-ChildItem -Path "TestDrive:/Content/*" -Include *.yaml | Should -HaveCount 1
+            'TestDrive:/Content/Scheduled.yaml' | Should -FileContentMatch 'kind: Scheduled'
+        }
+        It "Converts a Near Real Time Alert Sentinel Alert Rule ARM template to a YAML-file" {
+            Convert-SentinelARArmToYaml -Filename "TestDrive:/Content/NRT.json" -OutFile "TestDrive:/Content/NRT.yaml"
+            Get-ChildItem -Path "TestDrive:/Content/*" -Include *.yaml | Should -HaveCount 1
+            'TestDrive:/Content/NRT.yaml' | Should -FileContentMatch 'kind: NRT'
+        }
+        It "Converts a Near Real Time Alert Sentinel Alert Rule ARM template to a YAML-file" {
+            Convert-SentinelARArmToYaml -Filename "TestDrive:/Content/NRT.json" -OutFile "TestDrive:/Content/NRT.yaml"
+            Get-ChildItem -Path "TestDrive:/Content/*" -Include *.yaml | Should -HaveCount 1
+            'TestDrive:/Content/NRT.yaml' | Should -FileContentMatch 'kind: NRT'
+        }
+
+        It "Converts a mixed export of NRT and Scheduled to seperate YAML-files" {
+            Convert-SentinelARArmToYaml -Filename "TestDrive:/Content/ScheduledNRTMultiple.json" -UseIdAsFilename
+            Get-ChildItem -Path "TestDrive:/Content/*" -Include *.yaml | Should -HaveCount 2
+            'TestDrive:/Content/1baffb8f-9fc6-468e-aff6-91da707ec37d.yaml' | Should -FileContentMatch 'kind: Scheduled'
+            'TestDrive:/Content/4a4364e4-bd26-46f6-a040-ab14860275f8.yaml' | Should -FileContentMatch 'kind: NRT'
         }
     }
 }
