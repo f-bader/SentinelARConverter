@@ -74,6 +74,16 @@ If no output file path is given, the output will be send to `stdout`
 
 ## Changelog
 
+### v2.1.0
+
+* FIX: Fixed major flaw in conversion that could corrupt YAML files because of wrong Name translation. \
+  To check if you are affected by this bug please verify your converted YAML files. The following words could be corrupted.
+  * Renamed `displayName` to `name`
+  * Renamed `alertRuleTemplateName` to `id`
+  * Renamed `templateVersion` to `version`
+  * Renamed `techniques` to `relevantTechniques`
+* FEATURE: Added support for NRT rule conversion
+
 ### v2.0.2
 
 * FIX: Fixed Windows PowerShell support
