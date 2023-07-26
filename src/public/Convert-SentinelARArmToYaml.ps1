@@ -322,7 +322,7 @@ function Convert-SentinelARArmToYaml {
 
             # Convert the compare operators to the names used in the YAML
             foreach ($Arm2Yaml in $CompareOperatorArm2Yaml.Keys) {
-                $JSON = $JSON -replace $Arm2Yaml, $CompareOperatorArm2Yaml[$Arm2Yaml]
+                $JSON = $JSON -replace "`"$Arm2Yaml`"", "`"$($CompareOperatorArm2Yaml[$Arm2Yaml])`""
             }
 
             # Convert the JSON to a PowerShell object
