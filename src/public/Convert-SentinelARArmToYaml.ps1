@@ -164,15 +164,13 @@ function Convert-SentinelARArmToYaml {
             "LessThanOrEqual"    = "le"
         }
 
-        # List of values to always remove
-        $RemoveArmValues = @(
-            "enabled"
-        )
-
+        # Default sort order, naming is before key rename
         $DefaultSortOrderInYAML = @(
-            "id",
-            "name",
+            "id"
+            "alertRuleTemplateName", # id
+            "displayName", # name
             "version",
+            "templateVersion", #version
             "kind",
             "description",
             "severity",
@@ -182,7 +180,7 @@ function Convert-SentinelARArmToYaml {
             "triggerOperator",
             "triggerThreshold",
             "tactics",
-            "relevantTechniques",
+            "techniques", #relevantTechniques
             "query"
         )
 
@@ -226,12 +224,27 @@ function Convert-SentinelARArmToYaml {
         $resourceCounter = 0
 
         foreach ($resource in ( $AnalyticsRuleTemplate.resources | Where-Object { $_.type -eq "Microsoft.OperationalInsights/workspaces/providers/alertRules" } ) ) {
-            if ($resource.kind -ne "Scheduled") {
-                Write-Warning "Analytics Rule $($resource.properties.displayName) is using an unsupported type `"$($resource.kind)`". Only type `"Scheduled`" is supported."
+            if ( $resource.kind -notin @("Scheduled", "NRT") ) {
+                Write-Warning "Analytics Rule $($resource.properties.displayName) is using an unsupported type `"$($resource.kind)`". Only type `"Scheduled`", `"NRT`" are supported."
                 Continue
+            } elseif ($resource.kind -eq "NRT") {
+                # List of values to always remove for a NRT
+                $RemoveArmValues = @(
+                    "enabled",
+                    "startTimeUtc",
+                    "queryFrequency",
+                    "queryPeriod",
+                    "triggerOperator",
+                    "triggerThreshold"
+                )
+            } else {
+                # List of values to always remove
+                $RemoveArmValues = @(
+                    "enabled"
+                )
             }
-            # Get the id of the analytic rule
 
+            # Get the id of the analytic rule
             if ($resource.id -match "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}") {
                 $Id = $Matches[0]
             } else {
@@ -307,14 +320,9 @@ function Convert-SentinelARArmToYaml {
             # Use ISO8601 format for timespan values
             $JSON = $JSON -replace '"PT([0-9]+)M"', '"$1m"' -replace '"PT([0-9]+)H"', '"$1h"' -replace '"P([0-9]+)D"', '"$1d"'
 
-            # Convert the names of the properties to the names used in the YAML
-            foreach ($Arm2Yaml in $ValueNameMappingArm2Yaml.Keys) {
-                $JSON = $JSON -replace $Arm2Yaml, $ValueNameMappingArm2Yaml[$Arm2Yaml]
-            }
-
             # Convert the compare operators to the names used in the YAML
             foreach ($Arm2Yaml in $CompareOperatorArm2Yaml.Keys) {
-                $JSON = $JSON -replace $Arm2Yaml, $CompareOperatorArm2Yaml[$Arm2Yaml]
+                $JSON = $JSON -replace "`"$Arm2Yaml`"", "`"$($CompareOperatorArm2Yaml[$Arm2Yaml])`""
             }
 
             # Convert the JSON to a PowerShell object
@@ -329,7 +337,15 @@ function Convert-SentinelARArmToYaml {
             foreach ($PropertyName in $AnalyticsRuleKeys) {
                 # Remove empty properties
                 if ( -not [string]::IsNullOrWhiteSpace($AnalyticsRule.$PropertyName) -or ( $AnalyticsRule.$PropertyName -is [array] -and ($AnalyticsRule.$PropertyName.Count -gt 0) ) ) {
-                    $AnalyticsRuleCleaned.Add($PropertyName, $AnalyticsRule.$PropertyName)
+                    # Change the name of the value if needed
+                    $KeyName = $ValueNameMappingArm2Yaml[$PropertyName]
+                    # If the name is not in the mapping, use the original name
+                    if ([string]::IsNullOrWhiteSpace($KeyName)) {
+                        $KeyName = $PropertyName
+                    }
+                    if ( -not $AnalyticsRuleCleaned.Contains($KeyName) ) {
+                        $AnalyticsRuleCleaned.Add($KeyName, $AnalyticsRule.$PropertyName)
+                    }
                 }
             }
 
