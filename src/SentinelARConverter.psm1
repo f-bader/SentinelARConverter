@@ -1,8 +1,8 @@
 # Import private and public scripts and expose the public ones
-$privateScripts = @(Get-ChildItem -Path "$PSScriptRoot\private" -Recurse -Filter "*.ps1") | Sort-Object Name
-$publicScripts = @(Get-ChildItem -Path "$PSScriptRoot\public" -Recurse -Filter "*.ps1") | Sort-Object Name
+$privateScripts = @(Get-ChildItem -Path "$PSScriptRoot\private" -Recurse -Filter "*.ps1" | Sort-Object Name )
+$publicScripts = @(Get-ChildItem -Path "$PSScriptRoot\public" -Recurse -Filter "*.ps1" | Sort-Object Name )
 
-foreach ($script in ($privateScripts + $publicScripts)) {
+foreach ($script in @($privateScripts + $publicScripts)) {
     Write-Verbose $script
     try {
         . $script.FullName
