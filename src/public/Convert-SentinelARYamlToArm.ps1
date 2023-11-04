@@ -120,6 +120,12 @@ function Convert-SentinelARYamlToArm {
             throw "Analytics Rule name or id is empty. YAML might be corrupted"
         }
 
+        # Generate new guid if id is not a valid guid
+        if ($analyticRule.id -notmatch "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}") {
+            Write-Warning "Error reading current Id. Generating new Id."
+            $analyticRule.id = (New-Guid).Guid
+        }
+
         Write-Verbose "Convert Analytics Rule $($analyticRule.name) ($($analyticRule.id)) to ARM template"
 
         #region Set output filename to defined value if not specified by user
