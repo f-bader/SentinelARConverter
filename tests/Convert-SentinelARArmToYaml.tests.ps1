@@ -12,6 +12,9 @@ param(
     [String]
     $mixedMultipleExampleFilePath = "./tests/examples/ScheduledNRTMultiple.json",
     [Parameter()]
+    [String]
+    $scheduledBadGuidExampleFilePath = "./tests/examples/ScheduledBadGuid.json",
+    [Parameter()]
     [Switch]
     $RetainTestFiles = $false
 )
@@ -24,50 +27,35 @@ BeforeDiscovery {
     $ModuleRoot = Split-Path -Path ./tests -Parent
     Import-Module -Name "$ModuleRoot/src/SentinelARConverter.psd1"
 
+    # Single ART
+    $ExampleFileName = Get-ChildItem $exampleFilePath | Select-Object -ExpandProperty Name
+    $convertedExampleFilePath = "TestDrive:/$ExampleFileName" -replace "\.json$", ".yaml"
+    $ARMTemplateContent = Get-Content $exampleFilePath -Raw
+    $convertedExampleFileName = $ExampleFileName -replace "\.json$", ".yaml"
+
     # Multiple ART
-    $DiscoveryARMTemplateMultipleContent = Get-Content $exampleMultipleFilePath -Raw
-    $DiscoveryconvertedMultipleTemplateContent = $DiscoveryARMTemplateMultipleContent | ConvertFrom-Json
+    $exampleMultipleFileName = Get-ChildItem $exampleMultipleFilePath | Select-Object -ExpandProperty Name
+    $exampleMultipleFileBaseName = Get-ChildItem $exampleMultipleFilePath | Select-Object -ExpandProperty BaseName
+    $convertedMultipleExampleFilePath = "TestDrive:/$exampleMultipleFileName" -replace "\.json$", ".yaml"
+    $MultipleExampleFile = Get-Item $exampleMultipleFilePath
+    $convertedMultipleExampleFileName = $exampleMultipleFileName -replace "\.json$", ".yaml"
+    $DiscoveryConvertedMultipleTemplateContent = Get-Content $exampleMultipleFilePath -Raw | ConvertFrom-Json
 }
 
 BeforeAll {
-
     # Import the module for the tests
     $ModuleRoot = Split-Path -Path ./tests -Parent
     Import-Module -Name "$ModuleRoot/src/SentinelARConverter.psd1"
-
-    # Create a test output folder
-    New-Item -ItemType Directory -Path "./tests/testOutput" -Force | Out-Null
-
-    # Do fileconversion
-    # Single ART
-    $convertedExampleFilePath = $exampleFilePath -replace "\.json$", ".yaml"
-    $ARMTemplateContent = Get-Content $exampleFilePath -Raw
-    $outputPath = $convertedExampleFilePath -replace "/examples/", "/testOutput/"
-    $convertedExampleFilePath -match "\w*\.yaml$"
-    $convertedExampleFileName = $matches[0]
-
-    # Multiple ART
-    $convertedMultipleExampleFilePath = $exampleMultipleFilePath -replace "\.json$", ".yaml"
-    $ARMTemplateMultipleContent = Get-Content $exampleMultipleFilePath -Raw
-    $MultipleExampleFile = Get-Item $exampleMultipleFilePath
-    $outputMultiplePath = $exampleMultipleFilePath -replace "/examples/", "/testOutput/"
-    $convertedMultipleExampleFilePath -match "\w*\.yaml$"
-    $convertedMultipleExampleFileName = $matches[0]
-    $convertedMultipleTemplateContent = $ARMTemplateMultipleContent | ConvertFrom-Json
 }
 
 Describe "Convert-SentinelARArmToYaml" {
-
-    BeforeEach {
-        Get-ChildItem ./tests/testOutput/ | Remove-Item -Recurse -Force
-        Get-ChildItem ./tests/examples -Filter *.yaml | Remove-Item -Force
+    BeforeAll {
+        Copy-Item -Path $exampleFilePath -Destination TestDrive:/ -Force
+        Copy-Item -Path $scheduledBadGuidExampleFilePath -Destination TestDrive:/ -Force
     }
 
     AfterEach {
-        if (-not $RetainTestFiles) {
-            Get-ChildItem ./tests/testOutput/ | Remove-Item -Recurse -Force
-            Get-ChildItem -Path ./tests/examples -Filter *.yaml | Remove-Item -Force
-        }
+        Remove-Item -Path "TestDrive:/*" -Include *.yaml -Force
     }
 
     Context "When no valid path was passed" -Tag Unit {
@@ -75,6 +63,7 @@ Describe "Convert-SentinelARArmToYaml" {
             { Convert-SentinelARArmToYaml -Filename "C:\Not\A\Real\File.json" } | Should -Throw "File not found"
         }
     }
+
     Context "When no resources are present in the passed ARM template" -Tag Unit {
 
         It "Throws an error" {
@@ -83,39 +72,39 @@ Describe "Convert-SentinelARArmToYaml" {
                 ConvertFrom-Json |
                 Select-Object "`$schema", "contentVersion", "parameters" |
                 ConvertTo-Json -Depth 99 |
-                Convert-SentinelARArmToYaml -OutFile $outputPath
+                Convert-SentinelARArmToYaml -OutFile $convertedExampleFilePath
             } | Should -Throw "This template contains no Analytics Rules or resources"
         }
     }
 
     Context "If an invalid template id is provided in the analytics rule resources block" -Tag Unit {
         It "Creates a new guid" {
-            Convert-SentinelARArmToYaml -Filename "./tests/examples/ScheduledBadGuid.json" -OutFile $outputPath
+            Convert-SentinelARArmToYaml -Filename "TestDrive:/ScheduledBadGuid.json" -OutFile $convertedExampleFilePath
 
-            $outputPath | Should -Not -FileContentMatch 'id: z-4a5f-4d27-8a26-b60a7952d5af'
+            $convertedExampleFilePath | Should -Not -FileContentMatch 'id: z-4a5f-4d27-8a26-b60a7952d5af'
         }
     }
 
     Context "If redundant ARM Properties are present in the rules" -Tag Unit {
         It "Removes the redundant ARM properties" {
-            $outputPath = "./tests/testOutput/$convertedExampleFileName"
+            $convertedExampleFilePath = "TestDrive:/$convertedExampleFileName"
 
-            $ARMTemplateContent | Convert-SentinelARArmToYaml -OutFile $outputPath
+            $ARMTemplateContent | Convert-SentinelARArmToYaml -OutFile $convertedExampleFilePath
 
-            $outputPath | Should -Not -FileContentMatch '^enabled: true'
+            $convertedExampleFilePath | Should -Not -FileContentMatch '^enabled: true'
         }
     }
 
     Context "When the template contains timespan values" -Tag Unit {
 
         It "Properly converts the units" {
-            $outputPath = "./tests/testOutput/$convertedExampleFileName"
+            $convertedExampleFilePath = "TestDrive:/$convertedExampleFileName"
 
-            $ARMTemplateContent | Convert-SentinelARArmToYaml -OutFile $outputPath
+            $ARMTemplateContent | Convert-SentinelARArmToYaml -OutFile $convertedExampleFilePath
 
-            $outputPath | Should -Not -FileContentMatch '^suppressionDuration: PT'
-            $outputPath | Should -Not -FileContentMatch '^queryPeriod: PT'
-            $outputPath | Should -Not -FileContentMatch '^queryFrequency: PT'
+            $convertedExampleFilePath | Should -Not -FileContentMatch '^suppressionDuration: PT'
+            $convertedExampleFilePath | Should -Not -FileContentMatch '^queryPeriod: PT'
+            $convertedExampleFilePath | Should -Not -FileContentMatch '^queryFrequency: PT'
         }
     }
 
@@ -132,67 +121,63 @@ Describe "Convert-SentinelARArmToYaml" {
         }
 
         BeforeEach {
-            $ARMTemplateContent = Get-Content -Path $exampleFilePath -Raw
-            $ARMTemplateContent | Convert-SentinelARArmToYaml -OutFile $outputPath
+            $ARMTemplateContent = Get-Content -Path "TestDrive:/$ExampleFileName" -Raw
+            $ARMTemplateContent | Convert-SentinelARArmToYaml -OutFile $convertedExampleFilePath
         }
 
         It "Properly converts the propertynames" {
 
-            $outputPath | Should -Not -FileContentMatch '^displayName'
-            $outputPath | Should -Not -FileContentMatch '^alertRuleTemplateName'
-            $outputPath | Should -Not -FileContentMatch '^templateVersion'
-            $outputPath | Should -Not -FileContentMatch '^techniques'
+            $convertedExampleFilePath | Should -Not -FileContentMatch '^displayName'
+            $convertedExampleFilePath | Should -Not -FileContentMatch '^alertRuleTemplateName'
+            $convertedExampleFilePath | Should -Not -FileContentMatch '^templateVersion'
+            $convertedExampleFilePath | Should -Not -FileContentMatch '^techniques'
         }
 
         It "Properly converts the comparison operators" -Skip:$CannotCheckComparisonOperators {
-            $outputPath | Should -Not -FileContentMatch 'GreaterThan$'
-            $outputPath | Should -Not -FileContentMatch 'Equals$'
-            $outputPath | Should -Not -FileContentMatch 'GreaterThanOrEqual$'
-            $outputPath | Should -Not -FileContentMatch 'LessThan$'
-            $outputPath | Should -Not -FileContentMatch 'LessThanOrEqual$'
+            $convertedExampleFilePath | Should -Not -FileContentMatch 'GreaterThan$'
+            $convertedExampleFilePath | Should -Not -FileContentMatch 'Equals$'
+            $convertedExampleFilePath | Should -Not -FileContentMatch 'GreaterThanOrEqual$'
+            $convertedExampleFilePath | Should -Not -FileContentMatch 'LessThan$'
+            $convertedExampleFilePath | Should -Not -FileContentMatch 'LessThanOrEqual$'
         }
     }
     Context "Properly handles Force situations" -Tag Unit {
         BeforeEach {
-            "this is not an ART" | Out-File -FilePath $outputPath -Force
+            "this is not an ART" | Out-File -FilePath $convertedExampleFilePath -Force
         }
 
         It "Shouldn't overwrites existing files when Force is not used" {
-            { Convert-SentinelARArmToYaml -OutFile $outputPath -Filename $exampleFilePath } | Should -Throw
-            $outputPath | Should -FileContentMatch "^this is not an ART"
+            { Convert-SentinelARArmToYaml -OutFile $convertedExampleFilePath -Filename "TestDrive:/$ExampleFileName" } | Should -Throw
+            $convertedExampleFilePath | Should -FileContentMatch "^this is not an ART"
         }
         It "Shouldn't overwrites existing files when Force is not used and throw an exception" {
-            { Convert-SentinelARArmToYaml -OutFile $outputPath -Filename $exampleFilePath } | Should -Throw
+            { Convert-SentinelARArmToYaml -OutFile $convertedExampleFilePath -Filename "TestDrive:/$ExampleFileName" } | Should -Throw
         }
         It "Should overwrites existing files when Force is used and shouldn't throw an exception" {
-            { Convert-SentinelARArmToYaml -OutFile $outputPath -Filename $exampleFilePath -Force } | Should -Not -Throw
-            $outputPath | Should -Not -FileContentMatch "^this is not an ART"
+            { Convert-SentinelARArmToYaml -OutFile $convertedExampleFilePath -Filename "TestDrive:/$ExampleFileName" -Force } | Should -Not -Throw
+            $convertedExampleFilePath | Should -Not -FileContentMatch "^this is not an ART"
         }
         It "Should overwrites existing files when Force is used and shouldn't throw an exception" {
-            { Convert-SentinelARArmToYaml -OutFile $outputPath -Filename $exampleFilePath -Force } | Should -Not -Throw
+            { Convert-SentinelARArmToYaml -OutFile $convertedExampleFilePath -Filename "TestDrive:/$ExampleFileName" -Force } | Should -Not -Throw
         }
     }
 }
 
 Describe "Single File Testcases" {
 
-    BeforeEach {
-        Get-ChildItem ./tests/testOutput/ | Remove-Item -Recurse -Force
-        Get-ChildItem ./tests/examples -Filter *.yaml | Remove-Item -Force
+    BeforeAll {
+        Copy-Item -Path $exampleFilePath -Destination TestDrive:/ -Force
     }
 
     AfterEach {
-        if (-not $RetainTestFiles) {
-            Get-ChildItem ./tests/testOutput/ | Remove-Item -Recurse -Force
-            Get-ChildItem -Path ./tests/examples -Filter *.yaml | Remove-Item -Force
-        }
+        Remove-Item -Path "TestDrive:/*" -Include *.yaml -Force
     }
 
     Context "When converting a Sentinel Alert Rule ARM template to YAML" -Tag Integration {
         It "Converts a Scheduled Query Alert Sentinel Alert Rule ARM template to a YAML-file" {
             $convertSentinelARArmToYamlSplat = @{
-                Filename = $exampleFilePath
-                OutFile  = "./tests/testOutput/$convertedExampleFileName"
+                Filename = "TestDrive:/$ExampleFileName"
+                OutFile  = "TestDrive:/$convertedExampleFileName"
             }
 
             Convert-SentinelARArmToYaml @convertSentinelARArmToYamlSplat
@@ -203,7 +188,7 @@ Describe "Single File Testcases" {
     Context "If UseOriginalFilename was passed" -Tag Integration {
         It "Creates a yaml file in the same folder as the ARM template" {
             $convertSentinelARArmToYamlSplat = @{
-                Filename            = $exampleFilePath
+                Filename            = "TestDrive:/$ExampleFileName"
                 UseOriginalFilename = $true
             }
 
@@ -213,7 +198,7 @@ Describe "Single File Testcases" {
 
         It "Should use the original filename" {
             $convertSentinelARArmToYamlSplat = @{
-                Filename            = $exampleFilePath
+                Filename            = "TestDrive:/$ExampleFileName"
                 UseOriginalFilename = $true
             }
 
@@ -227,64 +212,71 @@ Describe "Single File Testcases" {
 
     Context "If UseDisplayNameAsFilename was passed" -Tag Integration {
         It "Creates a yaml file in the same folder as the ARM template with the display name as filename" {
+            Copy-Item -Path $exampleFilePath -Destination "TestDrive:\Scheduled.json" -Force
             $convertSentinelARArmToYamlSplat = @{
-                Filename                 = "./tests/examples/Scheduled.json"
+                Filename                 = "TestDrive:/Scheduled.json"
                 UseDisplayNameAsFilename = $true
             }
             Convert-SentinelARArmToYaml @convertSentinelARArmToYamlSplat
 
-            "./tests/examples/AzureWAFMatchingForLog4jVulnCVE202144228.yaml" | Should -Exist
-            Remove-Item "./tests/examples/AzureWAFMatchingForLog4jVulnCVE202144228.yaml" -Force
+            "TestDrive:/AzureWAFMatchingForLog4jVulnCVE202144228.yaml" | Should -Exist
         }
     }
 
     Context "If UseIdAsFilename was passed" -Tag Integration {
         It "Creates a yaml file in the same folder as the ARM template with the id as filename" {
             $convertSentinelARArmToYamlSplat = @{
-                Filename        = "./tests/examples/Scheduled.json"
+                Filename        = "TestDrive:/Scheduled.json"
                 UseIdAsFilename = $true
             }
 
             Convert-SentinelARArmToYaml @convertSentinelARArmToYamlSplat
 
-            "./tests/examples/6bb8e22c-4a5f-4d27-8a26-b60a7952d5af.yaml" | Should -Exist
-            Remove-Item "./tests/examples/6bb8e22c-4a5f-4d27-8a26-b60a7952d5af.yaml" -Force
+            "TestDrive:/6bb8e22c-4a5f-4d27-8a26-b60a7952d5af.yaml" | Should -Exist
+            Remove-Item "TestDrive:/6bb8e22c-4a5f-4d27-8a26-b60a7952d5af.yaml" -Force
         }
     }
     Context "If an ARM template file content is passed via pipeline" -Tag Integration {
         It "Should convert a Scheduled Query Alert Sentinel Alert Rule ARM template to a YAML file" {
             $convertSentinelARArmToYamlSplat = @{
-                Filename = $exampleFilePath
+                Filename = "TestDrive:/$ExampleFileName"
                 OutFile  = $convertedExampleFileName
             }
-            Get-Content -Path $convertSentinelARArmToYamlSplat.Filename -Raw | Convert-SentinelARArmToYaml -OutFile $outputPath
-            Test-Path -Path $outputPath | Should -Be $True
+            Get-Content -Path $convertSentinelARArmToYamlSplat.Filename -Raw | Convert-SentinelARArmToYaml -OutFile $convertedExampleFilePath
+            Test-Path -Path $convertedExampleFilePath | Should -Be $True
         }
     }
 
     Context "If neither OutFile or UseOriginalFilename is passed" -Tag Integration {
         It "Outputs YAML to the console" {
             $convertSentinelARArmToYamlSplat = @{
-                Filename = $exampleFilePath
+                Filename = "TestDrive:/$ExampleFileName"
             }
 
             $output = (Get-Content -Path $convertSentinelARArmToYamlSplat.Filename -Raw | Convert-SentinelARArmToYaml)
             $output | Should -Not -BeNullOrEmpty
-            Get-ChildItem -Path ./tests -Recurse -Filter $convertedExampleFileName | Should -BeNullOrEmpty
+            Get-ChildItem -Path "TestDrive:/" -Recurse -Filter $convertedExampleFileName | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "If neither OutFile or UseOriginalFilename is passed" -Tag Integration {
+        It "Outputs YAML to the console (single alert)" {
+            $output = (Get-Content -Path "TestDrive:/$ExampleFileName" -Raw | Convert-SentinelARArmToYaml)
+            $output | Should -Not -BeNullOrEmpty
+            Get-ChildItem -Path TestDrive:/ -Recurse -Filter $convertedExampleFileName | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateContent.resources).Count -lt 2) {
+Describe "Multi File Testcases" -Skip:(($DiscoveryConvertedMultipleTemplateContent.resources).Count -lt 2) {
 
     BeforeEach {
-        Get-ChildItem ./tests/testOutput/ -Filter *.yaml | Remove-Item -Recurse -Force
-        Get-ChildItem ./tests/examples -Filter *.yaml | Remove-Item -Force
+        Get-ChildItem TestDrive:/ -Filter *.yaml | Remove-Item -Recurse -Force
+        Copy-Item -Path $exampleMultipleFilePath -Destination TestDrive:/ -Force
     }
     AfterEach {
         if (-not $RetainTestFiles) {
-            Get-ChildItem ./tests/testOutput/ | Remove-Item -Recurse -Force
-            Get-ChildItem -Path ./tests/examples -Filter *.yaml | Remove-Item -Force
+            Get-ChildItem TestDrive:/ | Remove-Item -Recurse -Force
         }
     }
 
@@ -292,12 +284,12 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateConte
         BeforeDiscovery {
             # There always will be at least once file created, but we don't name the first one with a suffix
             # By subtracting 1 from the amount of resources, we can use that as a range for the expected amount of files
-            $DiscoveryExpectedFilesAmount = (0..($DiscoveryconvertedMultipleTemplateContent.resources.Count - 1))
+            $DiscoveryExpectedFilesAmount = (0..($DiscoveryConvertedMultipleTemplateContent.resources.Count - 1))
         }
         BeforeEach {
             $convertSentinelARArmToYamlSplat = @{
-                Filename = $exampleMultipleFilePath
-                OutFile  = "./tests/testOutput/$convertedMultipleExampleFileName"
+                Filename = "TestDrive:/$exampleMultipleFileName"
+                OutFile  = "TestDrive:/$convertedMultipleExampleFileName"
             }
             Convert-SentinelARArmToYaml @convertSentinelARArmToYamlSplat
         }
@@ -312,38 +304,29 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateConte
 
     Context "If UseOriginalFilename was passed" -Tag Integration {
         BeforeDiscovery {
-            # There always will be at least once file created, but we don't name the first one with a suffix
+            # There always will be at least one file created, but we don't name the first one with a suffix
             # By subtracting 1 from the amount of resources, we can use that as a range for the expected amount of files
-            $DiscoveryExpectedFilesAmount = (0..($DiscoveryconvertedMultipleTemplateContent.resources.Count - 1))
+            $DiscoveryExpectedFilesAmount = (0..($DiscoveryConvertedMultipleTemplateContent.resources.Count - 1))
 
-            $DiscoveryconvertSentinelARArmToYamlSplat = @{
-                Filename            = $exampleMultipleFilePath
-                UseOriginalFilename = $true
-            }
-            Convert-SentinelARArmToYaml @DiscoveryconvertSentinelARArmToYamlSplat
-
-            $DiscoveryFile = Get-Item $exampleMultipleFilePath
             $Discoveryfilenames = @(foreach ($entry in ($DiscoveryExpectedFilesAmount -NE 0)) {
-                    $DiscoveryFile.BaseName + "_$entry" + ".yaml"
+                    $exampleMultipleFileBaseName + "_$entry" + ".yaml"
                 }
             )
-            $Discoveryfilenames += $DiscoveryFile.BaseName + ".yaml"
-            Get-ChildItem -Path (Split-Path $exampleMultipleFilePath -Parent) -Filter *.yaml | Remove-Item -Force
+            $Discoveryfilenames += $exampleMultipleFileBaseName + ".yaml"
         }
 
         BeforeEach {
             $convertSentinelARArmToYamlSplat = @{
-                Filename            = $exampleMultipleFilePath
+                Filename            = "TestDrive:/$exampleMultipleFileName"
                 UseOriginalFilename = $true
             }
             Convert-SentinelARArmToYaml @convertSentinelARArmToYamlSplat
-            $exampleParent = $exampleMultipleFilePath | Split-Path -Parent
+            $exampleParent = "TestDrive:/$exampleMultipleFileName" | Split-Path -Parent
         }
 
         AfterAll {
             if (-not $RetainTestFiles) {
-                Get-ChildItem ./tests/testOutput/ | Remove-Item -Recurse -Force
-                Get-ChildItem -Path ./tests/examples -Filter *.yaml | Remove-Item -Force
+                Get-ChildItem TestDrive:/ | Remove-Item -Recurse -Force
             }
         }
         It "Creates a yaml file in the same folder as the ARM template (<_>)" -ForEach $Discoveryfilenames {
@@ -361,35 +344,37 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateConte
 
     Context "If UseDisplayNameAsFilename was passed" -Tag Integration {
         BeforeDiscovery {
-            $DiscoveryfileNames = foreach ($displayname in $DiscoveryconvertedMultipleTemplateContent.resources.properties.displayName) {
+            $DiscoveryfileNames = foreach ($displayname in $DiscoveryConvertedMultipleTemplateContent.resources.properties.displayName) {
                 # Use the display name of the Analytics Rule as filename
                 $FileName = $displayname -Replace '[^0-9A-Z]', ' '
                 # Convert To CamelCase
                 ((Get-Culture).TextInfo.ToTitleCase($FileName) -Replace ' ') + '.yaml'
             }
         }
+
         BeforeEach {
             $convertSentinelARArmToYamlSplat = @{
-                Filename                 = $exampleMultipleFilePath
+                Filename                 = "TestDrive:/$exampleMultipleFileName"
                 UseDisplayNameAsFilename = $true
             }
             Convert-SentinelARArmToYaml @convertSentinelARArmToYamlSplat
-            $exampleParent = $exampleMultipleFilePath | Split-Path -Parent
+            $exampleParent = "TestDrive:/"
 
-            $fileNames = foreach ($displayname in $convertedMultipleTemplateContent.resources.properties.displayName) {
+            $fileNames = foreach ($displayname in $DiscoveryConvertedMultipleTemplateContent.resources.properties.displayName) {
                 # Use the display name of the Analytics Rule as filename
                 $FileName = $displayname -Replace '[^0-9A-Z]', ' '
                 # Convert To CamelCase
                 ((Get-Culture).TextInfo.ToTitleCase($FileName) -Replace ' ') + '.yaml'
             }
         }
+
         It "Creates yaml files in the same folder as the ARM template with the display name as filename (<_>)" -ForEach $DiscoveryfileNames {
             (Get-ChildItem $exampleParent/* -Filter *.yaml -Exclude $convertedMultipleExampleFileName).Name | Should -BeIn $fileNames
         }
     }
     Context "If UseIdAsFilename was passed" -Tag Integration {
         BeforeDiscovery {
-            $DiscoveryfileNames = foreach ($displayname in $DiscoveryconvertedMultipleTemplateContent.resources.properties.displayName) {
+            $DiscoveryfileNames = foreach ($displayname in $DiscoveryConvertedMultipleTemplateContent.resources.properties.displayName) {
                 # Use the display name of the Analytics Rule as filename
                 $FileName = $displayname -Replace '[^0-9A-Z]', ' '
                 # Convert To CamelCase
@@ -398,13 +383,13 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateConte
         }
         BeforeEach {
             $convertSentinelARArmToYamlSplat = @{
-                Filename        = $exampleMultipleFilePath
+                Filename        = "TestDrive:/$exampleMultipleFileName"
                 UseIdAsFilename = $true
             }
             Convert-SentinelARArmToYaml @convertSentinelARArmToYamlSplat
-            $exampleParent = $exampleMultipleFilePath | Split-Path -Parent
+            $exampleParent = "TestDrive:/"
             [string[]]$ids = @(
-                foreach ($resource in $convertedMultipleTemplateContent.resources) {
+                foreach ($resource in $DiscoveryConvertedMultipleTemplateContent.resources) {
                     $resource.id -match "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}" | Out-Null
                     $matches[0]
                 }
@@ -420,12 +405,12 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateConte
         BeforeDiscovery {
             # There always will be at least once file created, but we don't name the first one with a suffix
             # By subtracting 1 from the amount of resources, we can use that as a range for the expected amount of files
-            $DiscoveryExpectedFilesAmount = (0..($DiscoveryconvertedMultipleTemplateContent.resources.Count - 1))
+            $DiscoveryExpectedFilesAmount = (0..($DiscoveryConvertedMultipleTemplateContent.resources.Count - 1))
         }
         BeforeEach {
             $convertSentinelARArmToYamlSplat = @{
-                Filename = $exampleMultipleFilePath
-                OutFile  = "./tests/testOutput/$convertedMultipleExampleFileName"
+                Filename = "TestDrive:/$exampleMultipleFileName"
+                OutFile  = "TestDrive:/$convertedMultipleExampleFileName"
             }
             Get-Content $convertSentinelARArmToYamlSplat.Filename -Raw | Convert-SentinelARArmToYaml -OutFile $convertSentinelARArmToYamlSplat.OutFile -Force
         }
@@ -440,7 +425,7 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateConte
     Context "If an ARM template file content, containing multiple ARTs, is passed via pipeline using UseDisplayNameAsFilename" -Tag Integration {
 
         BeforeDiscovery {
-            $DiscoveryfileNames = foreach ($displayname in $DiscoveryconvertedMultipleTemplateContent.resources.properties.displayName) {
+            $DiscoveryfileNames = foreach ($displayname in $DiscoveryConvertedMultipleTemplateContent.resources.properties.displayName) {
                 # Use the display name of the Analytics Rule as filename
                 $FileName = $displayname -Replace '[^0-9A-Z]', ' '
                 # Convert To CamelCase
@@ -448,11 +433,10 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateConte
             }
         }
         BeforeEach {
-            Get-Content $exampleMultipleFilePath -Raw | Convert-SentinelARArmToYaml -UseDisplayNameAsFilename -Directory "./tests/testOutput"
-            $exampleParent = $exampleMultipleFilePath | Split-Path -Parent
-            $testOutputPath = $exampleMultipleFilePath | Split-Path -Parent | Split-Path -Parent | Join-Path -ChildPath "testOutput"
+            $testOutputPath = "TestDrive:/"
+            Get-Content "TestDrive:/$exampleMultipleFileName" -Raw | Convert-SentinelARArmToYaml -UseDisplayNameAsFilename -Directory $testOutputPath
 
-            $fileNames = foreach ($displayname in $convertedMultipleTemplateContent.resources.properties.displayName) {
+            $fileNames = foreach ($displayname in $DiscoveryConvertedMultipleTemplateContent.resources.properties.displayName) {
                 # Use the display name of the Analytics Rule as filename
                 $FileName = $displayname -Replace '[^0-9A-Z]', ' '
                 # Convert To CamelCase
@@ -467,21 +451,19 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateConte
     Context "If an ARM template file content, containing multiple ARTs, is passed via pipeline using UseIdAsFilename" -Tag Integration {
 
         BeforeDiscovery {
-            $DiscoveryfileNames = foreach ($displayname in $DiscoveryconvertedMultipleTemplateContent.resources.properties.displayName) {
-                # Use the display name of the Analytics Rule as filename
-                $FileName = $displayname -Replace '[^0-9A-Z]', ' '
-                # Convert To CamelCase
-                ((Get-Culture).TextInfo.ToTitleCase($FileName) -Replace ' ')
+            $DiscoveryfileNames = foreach ($resourcesId in $DiscoveryConvertedMultipleTemplateContent.resources.id) {
+                if ($resourcesId -match "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}") {
+                    $ID = $Matches[0]
+                }
+                $ID
             }
         }
         BeforeEach {
-            Get-Content $exampleMultipleFilePath -Raw | Convert-SentinelARArmToYaml -UseIdAsFilename -Directory "./tests/testOutput"
-            $exampleParent = $exampleMultipleFilePath | Split-Path -Parent
-            $testOutputPath = $exampleMultipleFilePath | Split-Path -Parent | Split-Path -Parent | Join-Path -ChildPath "testOutput"
-
+            $testOutputPath = "TestDrive:/"
+            Get-Content "TestDrive:/$exampleMultipleFileName" -Raw | Convert-SentinelARArmToYaml -UseIdAsFilename -Directory $testOutputPath
 
             [string[]]$ids = @(
-                foreach ($resource in $convertedMultipleTemplateContent.resources) {
+                foreach ($resource in $DiscoveryConvertedMultipleTemplateContent.resources) {
                     $resource.id -match "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}" | Out-Null
                     $matches[0]
                 }
@@ -493,22 +475,14 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryconvertedMultipleTemplateConte
     }
 
     Context "If neither OutFile or UseOriginalFilename is passed" -Tag Integration {
-        It "Outputs YAML to the console (single alert)" {
-            $convertSentinelARArmToYamlSplat = @{
-                Filename = $exampleFilePath
-            }
-            $output = (Get-Content -Path $convertSentinelARArmToYamlSplat.Filename -Raw | Convert-SentinelARArmToYaml)
-            $output | Should -Not -BeNullOrEmpty
-            Get-ChildItem -Path ./tests -Recurse -Filter $convertedExampleFileName | Should -BeNullOrEmpty
-        }
         It "Outputs YAML to the console (multi alert)" {
             $convertSentinelARArmToYamlSplat = @{
-                Filename = $exampleMultipleFilePath
+                Filename = "TestDrive:/$exampleMultipleFileName"
             }
             $output = (Get-Content -Path $convertSentinelARArmToYamlSplat.Filename -Raw | Convert-SentinelARArmToYaml)
             $output[0] | Should -Not -BeNullOrEmpty
             $output[1] | Should -Not -BeNullOrEmpty
-            Get-ChildItem -Path ./tests -Recurse -Filter $convertedExampleFileName | Should -BeNullOrEmpty
+            Get-ChildItem -Path TestDrive:/ -Recurse -Filter $convertedExampleFileName | Should -BeNullOrEmpty
         }
     }
 }
@@ -517,7 +491,7 @@ Describe "Simple example tests" {
     Context "Single example tests" -Tag Integration {
         BeforeAll {
             New-Item TestDrive:/Single/ -ItemType Directory | Out-Null
-            Copy-Item -Path $exampleFilePath -Destination TestDrive:/Single/
+            Copy-Item -Path $exampleFilePath -Destination TestDrive:/Single/ -Force
         }
         AfterEach {
             Remove-Item -Path "TestDrive:/Single/*" -Include *.yaml -Force
@@ -538,7 +512,7 @@ Describe "Simple example tests" {
     Context "Multiple example tests" -Tag Integration {
         BeforeAll {
             New-Item TestDrive:/Multiple/ -ItemType Directory | Out-Null
-            Copy-Item -Path $exampleMultipleFilePath -Destination TestDrive:/Multiple/
+            Copy-Item -Path $exampleMultipleFilePath -Destination TestDrive:/Multiple/ -Force
         }
         AfterEach {
             Remove-Item -Path "TestDrive:/Multiple/*" -Include *.yaml -Force
@@ -575,9 +549,9 @@ Describe "Simple example tests" {
     Context "Content tests" -Tag Integration {
         BeforeAll {
             New-Item TestDrive:/Content/ -ItemType Directory | Out-Null
-            Copy-Item -Path $exampleFilePath -Destination TestDrive:/Content/
-            Copy-Item -Path $NRTexampleFilePath -Destination TestDrive:/Content/
-            Copy-Item -Path $mixedMultipleExampleFilePath -Destination TestDrive:/Content/
+            Copy-Item -Path $exampleFilePath -Destination TestDrive:/Content/ -Force
+            Copy-Item -Path $NRTexampleFilePath -Destination TestDrive:/Content/ -Force
+            Copy-Item -Path $mixedMultipleExampleFilePath -Destination TestDrive:/Content/ -Force
         }
         AfterEach {
             Remove-Item -Path "TestDrive:/Content/*" -Include *.yaml -Force
@@ -603,7 +577,8 @@ Describe "Simple example tests" {
 
 AfterAll {
     if (-not $RetainTestFiles) {
-        Remove-Item -Path "./tests/testOutput/" -Recurse -Force
+        Remove-Item -Path "TestDrive:/" -Recurse -Force
+        Remove-PSDrive TestDrive -Force
     }
     if ( Get-Module -Name SentinelARConverter ) {
         Remove-Module -Name SentinelARConverter -Force
