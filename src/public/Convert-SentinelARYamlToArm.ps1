@@ -31,6 +31,9 @@ The extension will be replaced with .json
 .PARAMETER APIVersion
 Set API version of the ARM template. Default is "2022-11-01-preview"
 
+.PARAMETER NamePrefix
+Set prefix for the name of the ARM template. Default is none
+
 .EXAMPLE
 Convert-SentinelARYamlToArm -Filename "C:\Temp\MyRule.yaml" -OutFile "C:\Temp\MyRule.json"
 
@@ -80,7 +83,10 @@ function Convert-SentinelARYamlToArm {
 
         [ValidatePattern('^\d{4}-\d{2}-\d{2}(-preview)?$')]
         [Parameter()]
-        [string]$APIVersion = "2022-11-01-preview"
+        [string]$APIVersion = "2022-11-01-preview",
+
+        [Parameter()]
+        [string]$NamePrefix
     )
 
     begin {
@@ -124,6 +130,11 @@ function Convert-SentinelARYamlToArm {
         if ($analyticRule.id -notmatch "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}") {
             Write-Warning "Error reading current Id. Generating new Id."
             $analyticRule.id = (New-Guid).Guid
+        }
+
+        # Add prefix to name if specified
+        if ($NamePrefix) {
+            $analyticRule.name = $NamePrefix + $analyticRule.name
         }
 
         Write-Verbose "Convert Analytics Rule $($analyticRule.name) ($($analyticRule.id)) to ARM template"

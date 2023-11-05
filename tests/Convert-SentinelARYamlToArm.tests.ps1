@@ -228,6 +228,30 @@ Describe "Convert-SentinelARYamlToArm" {
         }
     }
 
+    Context "Scheduled with parameter NamePrefix" -Tag Integration {
+        BeforeAll {
+            Copy-Item -Path $exampleScheduledFilePath -Destination "TestDrive:/Scheduled.yaml" -Force
+            $NamePrefix = "TestPrefix "
+            Convert-SentinelARYamlToArm -Filename "TestDrive:/Scheduled.yaml" -OutFile "TestDrive:/Scheduled.json" -NamePrefix $NamePrefix
+            $armTemplate = Get-Content -Path "TestDrive:/Scheduled.json" -Raw | ConvertFrom-Json
+        }
+
+        AfterEach {
+            if ( -not $RetainTestFiles) {
+                Remove-Item -Path "TestDrive:/*" -Include *.json -Force
+            }
+        }
+
+        It "Should have the prefix at the start of the displayname" {
+            $armTemplate.resources[0].properties.displayName | Should -Match "^TestPrefix "
+        }
+
+        It "Should have the prefix at the start of the displayname" {
+            $armTemplate.resources[0].properties.displayName | Should -Be "TestPrefix Azure WAF matching for Log4j vuln(CVE-2021-44228)"
+        }
+    }
+
+
     AfterAll {
         Remove-Module SentinelARConverter -Force
     }
