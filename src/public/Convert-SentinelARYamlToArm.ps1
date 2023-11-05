@@ -120,6 +120,12 @@ function Convert-SentinelARYamlToArm {
             throw "Analytics Rule name or id is empty. YAML might be corrupted"
         }
 
+        # Generate new guid if id is not a valid guid
+        if ($analyticRule.id -notmatch "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}") {
+            Write-Warning "Error reading current Id. Generating new Id."
+            $analyticRule.id = (New-Guid).Guid
+        }
+
         Write-Verbose "Convert Analytics Rule $($analyticRule.name) ($($analyticRule.id)) to ARM template"
 
         #region Set output filename to defined value if not specified by user
@@ -167,30 +173,6 @@ function Convert-SentinelARYamlToArm {
 
         # Replace API version with specified version
         $Template = $Template.Replace('<APIVERSION>', $APIVersion)
-
-        # Only include the following keys in ARM template
-        $DefaultSortOrderInArmTemplate = @(
-            "displayName",
-            "description",
-            "severity",
-            "enabled",
-            "query",
-            "queryFrequency",
-            "queryPeriod",
-            "triggerOperator",
-            "triggerThreshold",
-            "suppressionDuration",
-            "suppressionEnabled",
-            "tactics",
-            "techniques",
-            "alertRuleTemplateName",
-            "incidentConfiguration",
-            "eventGroupingSettings",
-            "alertDetailsOverride",
-            "customDetails",
-            "entityMappings",
-            "sentinelEntitiesMappings"
-        )
 
         $SkipYamlValues = @(
             "metadata",
@@ -253,17 +235,8 @@ function Convert-SentinelARYamlToArm {
             }
         }
 
-        # Sort by custom order
-        $ARMTemplateOrdered = [ordered]@{}
-        $ErrorActionPreference = "SilentlyContinue"
-        $AnalyticsRuleKeys = $ARMTemplate.Keys | Sort-Object { $i = $DefaultSortOrderInArmTemplate.IndexOf($_) ; if ( $i -eq -1 ) { 100 } else { $i } }
-        $ErrorActionPreference = "Continue"
-        foreach ($PropertyName in $AnalyticsRuleKeys) {
-            $ARMTemplateOrdered.Add($PropertyName, $ARMTemplate.$PropertyName)
-        }
-
         # Convert hashtable to JSON
-        $JSON = $ARMTemplateOrdered | ConvertTo-Json -Depth 99
+        $JSON = $ARMTemplate | ConvertTo-Json -Depth 99
         # Use ISO8601 format for timespan values
         $JSON = $JSON -replace '"([0-9]+)m"', '"PT$1M"' -replace '"([0-9]+)h"', '"PT$1H"' -replace '"([0-9]+)d"', '"P$1D"'
 
@@ -278,10 +251,10 @@ function Convert-SentinelARYamlToArm {
         $Result = $Template.Replace("<PROPERTIES>", $JSON)
         $Result = $Result.Replace("<TEMPLATEID>", $analyticRule.id)
         $Result = $Result.Replace("<RULEKIND>", $ScheduleKind)
-        if ( $PSVersionTable.PSVersion -ge [version]'7.0.0' ) {
-            # Beautify in PowerShell 7 and above
-            $Result = $Result | ConvertFrom-Json | ConvertTo-Json -Depth 99
-        }
+
+        # Sort all property keys in ARM template and convert to JSON string object
+        $Result = Invoke-SortJSONObject -object ( $Result | ConvertFrom-Json )
+        $Result = $Result | ConvertTo-Json -Depth 99
 
         if ($OutFile) {
             $Result | Out-File $OutFile -Force
