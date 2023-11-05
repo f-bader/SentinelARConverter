@@ -74,6 +74,11 @@ If no output file path is given, the output will be send to `stdout`
 
 ## Changelog
 
+### v2.2.0
+
+* FEATURE: Sort all properties in the resulting JSON file by property name. \
+  This allows to use the resulting JSON/ARM file to be used in any CI/CD pipeline without commits based on sort order.
+
 ### v2.1.0
 
 * FIX: Fixed major flaw in conversion that could corrupt YAML files because of wrong Name translation. \
