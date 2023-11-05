@@ -174,30 +174,6 @@ function Convert-SentinelARYamlToArm {
         # Replace API version with specified version
         $Template = $Template.Replace('<APIVERSION>', $APIVersion)
 
-        # Only include the following keys in ARM template
-        $DefaultSortOrderInArmTemplate = @(
-            "displayName",
-            "description",
-            "severity",
-            "enabled",
-            "query",
-            "queryFrequency",
-            "queryPeriod",
-            "triggerOperator",
-            "triggerThreshold",
-            "suppressionDuration",
-            "suppressionEnabled",
-            "tactics",
-            "techniques",
-            "alertRuleTemplateName",
-            "incidentConfiguration",
-            "eventGroupingSettings",
-            "alertDetailsOverride",
-            "customDetails",
-            "entityMappings",
-            "sentinelEntitiesMappings"
-        )
-
         $SkipYamlValues = @(
             "metadata",
             "kind",
