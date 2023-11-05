@@ -160,9 +160,11 @@ Describe "Convert-SentinelARYamlToArm" {
     Context "Validate integrity of resulting ARM template" {
         BeforeAll {
             Copy-Item -Path $exampleScheduledFilePath -Destination "TestDrive:/Scheduled.yaml" -Force
-            Convert-SentinelARYamlToArm -Filename "TestDrive:/Scheduled.yaml" -OutFile "TestDrive:/Scheduled.json"
+            $APIVersion = "2022-09-01-preview"
+            Convert-SentinelARYamlToArm -Filename "TestDrive:/Scheduled.yaml" -OutFile "TestDrive:/Scheduled.json" -APIVersion $APIVersion
             $armTemplate = Get-Content -Path "TestDrive:/Scheduled.json" -Raw | ConvertFrom-Json
             $YAMLSourceContent = Get-Content -Path "TestDrive:/Scheduled.yaml" -Raw | ConvertFrom-Yaml
+            $SortedPropertiesNames = $armTemplate.resources[0].properties | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name | Sort-Object
         }
 
         AfterEach {
@@ -181,6 +183,48 @@ Describe "Convert-SentinelARYamlToArm" {
 
         It "Should match the query from the YAML file" {
             $armTemplate.resources[0].properties.query | Should -Be $YAMLSourceContent.query
+        }
+
+        Context "ARM template resource properties" {
+
+            It "Should have the correct kind" {
+                $armTemplate.resources[0].kind | Should -Be "Scheduled"
+            }
+
+            It "Should have the correct severity" {
+                $armTemplate.resources[0].properties.severity | Should -Be $YAMLSourceContent.severity
+            }
+
+
+            It "Should have the correct display name" {
+                $armTemplate.resources[0].properties.displayName | Should -Be $YAMLSourceContent.Name
+            }
+
+            It "Should have the correct description" {
+                $armTemplate.resources[0].properties.description | Should -Be $YAMLSourceContent.description
+            }
+
+            It "Should have the correct tactics" {
+                $armTemplate.resources[0].properties.tactics | Should -Be $YAMLSourceContent.tactics
+            }
+
+            It "Should have the correct queryFrequency" {
+                $armTemplate.resources[0].properties.queryFrequency | Should -Be "PT6H"
+            }
+
+            It "Should have the correct queryPeriod" {
+                $armTemplate.resources[0].properties.queryPeriod | Should -Be "PT6H"
+            }
+
+            # should have the correct api version
+            It "Should have the correct api version" {
+                $armTemplate.resources[0].apiVersion | Should -Be "2022-09-01-preview"
+            }
+
+            It "Should be in alphabetical order" {
+                $armTemplate.resources[0].properties.psobject.members | Where-Object MemberType -EQ "NoteProperty" | Select-Object -ExpandProperty Name | Should -Be @($SortedPropertiesNames)
+            }
+
         }
     }
 
