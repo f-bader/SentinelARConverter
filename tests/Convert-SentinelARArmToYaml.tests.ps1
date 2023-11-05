@@ -36,10 +36,7 @@ BeforeDiscovery {
     # Multiple ART
     $exampleMultipleFileName = Get-ChildItem $exampleMultipleFilePath | Select-Object -ExpandProperty Name
     $exampleMultipleFileBaseName = Get-ChildItem $exampleMultipleFilePath | Select-Object -ExpandProperty BaseName
-    $convertedMultipleExampleFilePath = "TestDrive:/$exampleMultipleFileName" -replace "\.json$", ".yaml"
-    $MultipleExampleFile = Get-Item $exampleMultipleFilePath
-    $convertedMultipleExampleFileName = $exampleMultipleFileName -replace "\.json$", ".yaml"
-    $DiscoveryConvertedMultipleTemplateContent = Get-Content $exampleMultipleFilePath -Raw | ConvertFrom-Json
+    $MultipleTemplateContent = Get-Content $exampleMultipleFilePath -Raw | ConvertFrom-Json
 }
 
 BeforeAll {
@@ -55,11 +52,9 @@ BeforeAll {
 
     # Multiple ART
     $exampleMultipleFileName = Get-ChildItem $exampleMultipleFilePath | Select-Object -ExpandProperty Name
-    $exampleMultipleFileBaseName = Get-ChildItem $exampleMultipleFilePath | Select-Object -ExpandProperty BaseName
-    $convertedMultipleExampleFilePath = "TestDrive:/$exampleMultipleFileName" -replace "\.json$", ".yaml"
     $MultipleExampleFile = Get-Item $exampleMultipleFilePath
     $convertedMultipleExampleFileName = $exampleMultipleFileName -replace "\.json$", ".yaml"
-    $DiscoveryConvertedMultipleTemplateContent = Get-Content $exampleMultipleFilePath -Raw | ConvertFrom-Json
+    $MultipleTemplateContent = Get-Content $exampleMultipleFilePath -Raw | ConvertFrom-Json
 }
 
 Describe "Convert-SentinelARArmToYaml" {
@@ -282,7 +277,7 @@ Describe "Single File Testcases" {
     }
 }
 
-Describe "Multi File Testcases" -Skip:(($DiscoveryConvertedMultipleTemplateContent.resources).Count -lt 2) {
+Describe "Multi File Testcases" -Skip:(($MultipleTemplateContent.resources).Count -lt 2) {
 
     BeforeEach {
         Get-ChildItem TestDrive:/ -Filter *.yaml | Remove-Item -Recurse -Force
@@ -298,7 +293,7 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryConvertedMultipleTemplateConte
         BeforeDiscovery {
             # There always will be at least once file created, but we don't name the first one with a suffix
             # By subtracting 1 from the amount of resources, we can use that as a range for the expected amount of files
-            $DiscoveryExpectedFilesAmount = (0..($DiscoveryConvertedMultipleTemplateContent.resources.Count - 1))
+            $DiscoveryExpectedFilesAmount = (0..($MultipleTemplateContent.resources.Count - 1))
         }
         BeforeEach {
             $convertSentinelARArmToYamlSplat = @{
@@ -320,7 +315,7 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryConvertedMultipleTemplateConte
         BeforeDiscovery {
             # There always will be at least one file created, but we don't name the first one with a suffix
             # By subtracting 1 from the amount of resources, we can use that as a range for the expected amount of files
-            $DiscoveryExpectedFilesAmount = (0..($DiscoveryConvertedMultipleTemplateContent.resources.Count - 1))
+            $DiscoveryExpectedFilesAmount = (0..($MultipleTemplateContent.resources.Count - 1))
 
             $Discoveryfilenames = @(foreach ($entry in ($DiscoveryExpectedFilesAmount -NE 0)) {
                     $exampleMultipleFileBaseName + "_$entry" + ".yaml"
@@ -358,7 +353,7 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryConvertedMultipleTemplateConte
 
     Context "If UseDisplayNameAsFilename was passed" -Tag Integration {
         BeforeDiscovery {
-            $DiscoveryfileNames = foreach ($displayname in $DiscoveryConvertedMultipleTemplateContent.resources.properties.displayName) {
+            $DiscoveryfileNames = foreach ($displayname in $MultipleTemplateContent.resources.properties.displayName) {
                 # Use the display name of the Analytics Rule as filename
                 $FileName = $displayname -Replace '[^0-9A-Z]', ' '
                 # Convert To CamelCase
@@ -374,7 +369,7 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryConvertedMultipleTemplateConte
             Convert-SentinelARArmToYaml @convertSentinelARArmToYamlSplat
             $exampleParent = "TestDrive:/"
 
-            $fileNames = foreach ($displayname in $DiscoveryConvertedMultipleTemplateContent.resources.properties.displayName) {
+            $fileNames = foreach ($displayname in $MultipleTemplateContent.resources.properties.displayName) {
                 # Use the display name of the Analytics Rule as filename
                 $FileName = $displayname -Replace '[^0-9A-Z]', ' '
                 # Convert To CamelCase
@@ -388,7 +383,7 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryConvertedMultipleTemplateConte
     }
     Context "If UseIdAsFilename was passed" -Tag Integration {
         BeforeDiscovery {
-            $DiscoveryfileNames = foreach ($displayname in $DiscoveryConvertedMultipleTemplateContent.resources.properties.displayName) {
+            $DiscoveryfileNames = foreach ($displayname in $MultipleTemplateContent.resources.properties.displayName) {
                 # Use the display name of the Analytics Rule as filename
                 $FileName = $displayname -Replace '[^0-9A-Z]', ' '
                 # Convert To CamelCase
@@ -403,7 +398,7 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryConvertedMultipleTemplateConte
             Convert-SentinelARArmToYaml @convertSentinelARArmToYamlSplat
             $exampleParent = "TestDrive:/"
             [string[]]$ids = @(
-                foreach ($resource in $DiscoveryConvertedMultipleTemplateContent.resources) {
+                foreach ($resource in $MultipleTemplateContent.resources) {
                     $resource.id -match "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}" | Out-Null
                     $matches[0]
                 }
@@ -419,7 +414,7 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryConvertedMultipleTemplateConte
         BeforeDiscovery {
             # There always will be at least once file created, but we don't name the first one with a suffix
             # By subtracting 1 from the amount of resources, we can use that as a range for the expected amount of files
-            $DiscoveryExpectedFilesAmount = (0..($DiscoveryConvertedMultipleTemplateContent.resources.Count - 1))
+            $DiscoveryExpectedFilesAmount = (0..($MultipleTemplateContent.resources.Count - 1))
         }
         BeforeEach {
             $convertSentinelARArmToYamlSplat = @{
@@ -439,7 +434,7 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryConvertedMultipleTemplateConte
     Context "If an ARM template file content, containing multiple ARTs, is passed via pipeline using UseDisplayNameAsFilename" -Tag Integration {
 
         BeforeDiscovery {
-            $DiscoveryfileNames = foreach ($displayname in $DiscoveryConvertedMultipleTemplateContent.resources.properties.displayName) {
+            $DiscoveryfileNames = foreach ($displayname in $MultipleTemplateContent.resources.properties.displayName) {
                 # Use the display name of the Analytics Rule as filename
                 $FileName = $displayname -Replace '[^0-9A-Z]', ' '
                 # Convert To CamelCase
@@ -450,7 +445,7 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryConvertedMultipleTemplateConte
             $testOutputPath = "TestDrive:/"
             Get-Content "TestDrive:/$exampleMultipleFileName" -Raw | Convert-SentinelARArmToYaml -UseDisplayNameAsFilename -Directory $testOutputPath
 
-            $fileNames = foreach ($displayname in $DiscoveryConvertedMultipleTemplateContent.resources.properties.displayName) {
+            $fileNames = foreach ($displayname in $MultipleTemplateContent.resources.properties.displayName) {
                 # Use the display name of the Analytics Rule as filename
                 $FileName = $displayname -Replace '[^0-9A-Z]', ' '
                 # Convert To CamelCase
@@ -465,7 +460,7 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryConvertedMultipleTemplateConte
     Context "If an ARM template file content, containing multiple ARTs, is passed via pipeline using UseIdAsFilename" -Tag Integration {
 
         BeforeDiscovery {
-            $DiscoveryfileNames = foreach ($resourcesId in $DiscoveryConvertedMultipleTemplateContent.resources.id) {
+            $DiscoveryfileNames = foreach ($resourcesId in $MultipleTemplateContent.resources.id) {
                 if ($resourcesId -match "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}") {
                     $ID = $Matches[0]
                 }
@@ -477,7 +472,7 @@ Describe "Multi File Testcases" -Skip:(($DiscoveryConvertedMultipleTemplateConte
             Get-Content "TestDrive:/$exampleMultipleFileName" -Raw | Convert-SentinelARArmToYaml -UseIdAsFilename -Directory $testOutputPath
 
             [string[]]$ids = @(
-                foreach ($resource in $DiscoveryConvertedMultipleTemplateContent.resources) {
+                foreach ($resource in $MultipleTemplateContent.resources) {
                     $resource.id -match "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}" | Out-Null
                     $matches[0]
                 }
