@@ -46,6 +46,20 @@ BeforeAll {
     # Import the module for the tests
     $ModuleRoot = Split-Path -Path ./tests -Parent
     Import-Module -Name "$ModuleRoot/src/SentinelARConverter.psd1"
+
+    # Single ART
+    $ExampleFileName = Get-ChildItem $exampleFilePath | Select-Object -ExpandProperty Name
+    $convertedExampleFilePath = "TestDrive:/$ExampleFileName" -replace "\.json$", ".yaml"
+    $ARMTemplateContent = Get-Content $exampleFilePath -Raw
+    $convertedExampleFileName = $ExampleFileName -replace "\.json$", ".yaml"
+
+    # Multiple ART
+    $exampleMultipleFileName = Get-ChildItem $exampleMultipleFilePath | Select-Object -ExpandProperty Name
+    $exampleMultipleFileBaseName = Get-ChildItem $exampleMultipleFilePath | Select-Object -ExpandProperty BaseName
+    $convertedMultipleExampleFilePath = "TestDrive:/$exampleMultipleFileName" -replace "\.json$", ".yaml"
+    $MultipleExampleFile = Get-Item $exampleMultipleFilePath
+    $convertedMultipleExampleFileName = $exampleMultipleFileName -replace "\.json$", ".yaml"
+    $DiscoveryConvertedMultipleTemplateContent = Get-Content $exampleMultipleFilePath -Raw | ConvertFrom-Json
 }
 
 Describe "Convert-SentinelARArmToYaml" {
