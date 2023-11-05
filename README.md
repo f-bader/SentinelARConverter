@@ -74,6 +74,10 @@ If no output file path is given, the output will be send to `stdout`
 
 ## Changelog
 
+### v2.2.1
+
+ * FEATURE: Add new parameter `-NamePrefix` for `Convert-SentinelARYamlToArm` to allow the user to add a prefix to the ANR name
+
 ### v2.2.0
 
 * FEATURE: Sort all properties in the resulting JSON file by property name. \
