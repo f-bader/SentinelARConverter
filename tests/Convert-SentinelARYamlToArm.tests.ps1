@@ -99,17 +99,17 @@ Describe "Convert-SentinelARYamlToArm" {
         }
         It "No Pipeline and UseOriginalFilename" {
             Convert-SentinelARYamlToArm -Filename "TestDrive:/NRT.yaml" -UseOriginalFilename
-            Get-ChildItem -Path "TestDrive:/" -Filter *.yaml | Should -HaveCount 1
+            Get-ChildItem -Path "TestDrive:/" -Filter *.json | Should -HaveCount 1
             Get-ChildItem -Path "TestDrive:/" -Filter *.json | Select-Object -ExpandProperty Name | Should -Be "NRT.json"
         }
         It "No Pipeline and UseDisplayNameAsFilename" {
             Convert-SentinelARYamlToArm -Filename "TestDrive:/NRT.yaml" -UseDisplayNameAsFilename
-            Get-ChildItem -Path "TestDrive:/" -Filter *.yaml | Should -HaveCount 1
+            Get-ChildItem -Path "TestDrive:/" -Filter *.json | Should -HaveCount 1
             Get-ChildItem -Path "TestDrive:/" -Filter *.json | Select-Object -ExpandProperty Name | Should -Be "NRTModifiedDomainFederationTrustSettings.json"
         }
         It "No Pipeline and UseDisplayNameAsFilename" {
             Convert-SentinelARYamlToArm -Filename "TestDrive:/NRT.yaml" -UseIdAsFilename
-            Get-ChildItem -Path "TestDrive:/" -Filter *.yaml | Should -HaveCount 1
+            Get-ChildItem -Path "TestDrive:/" -Filter *.json | Should -HaveCount 1
             Get-ChildItem -Path "TestDrive:/" -Filter *.json | Select-Object -ExpandProperty Name | Should -Be "4a4364e4-bd26-46f6-a040-ab14860275f8.json"
         }
     }
@@ -251,6 +251,35 @@ Describe "Convert-SentinelARYamlToArm" {
         }
     }
 
+    Context "Scheduled with parameter Severity" -Tag Integration {
+        BeforeDiscovery {
+            $AllowedSeverities = @("Informational", "Low", "Medium", "High")
+        }
+
+        BeforeAll {
+            Copy-Item -Path $exampleScheduledFilePath -Destination "TestDrive:/Scheduled.yaml" -Force
+            Convert-SentinelARYamlToArm -Filename "TestDrive:/Scheduled.yaml" -OutFile "TestDrive:/Scheduled.json" -Severity "Informational"
+            $armTemplate = Get-Content -Path "TestDrive:/Scheduled.json" -Raw | ConvertFrom-Json
+        }
+
+        AfterEach {
+            Remove-Item -Path "TestDrive:/*" -Include *.json -Force
+        }
+
+        It "Should have the prefix at the start of the displayname" {
+            $armTemplate.resources[0].properties.severity | Should -Be "Informational"
+        }
+
+        It "Should work with severity <_>" -ForEach $AllowedSeverities {
+            Convert-SentinelARYamlToArm -Filename "TestDrive:/Scheduled.yaml" -OutFile "TestDrive:/Scheduled-Severity.json" -Severity $_
+            Get-ChildItem -Path "TestDrive:/" -Filter *.json | Should -HaveCount 1
+            Get-ChildItem -Path "TestDrive:/" -Filter *.json | Select-Object -ExpandProperty Name | Should -Be "Scheduled-Severity.json"
+        }
+
+        It "Should fail when invalid severity is used" {
+            Convert-SentinelARYamlToArm -Filename "TestDrive:/Scheduled.yaml" -OutFile "TestDrive:/Scheduled-WrongSeverity.json" -Severity "SUPERIMPORTANT" | Should -Throw
+        }
+    }
 
     AfterAll {
         Remove-Module SentinelARConverter -Force
