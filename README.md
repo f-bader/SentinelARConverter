@@ -74,6 +74,10 @@ If no output file path is given, the output will be send to `stdout`
 
 ## Changelog
 
+### v2.2.2
+
+ * FEATURE: Add new parameter `-Severity` for `Convert-SentinelARYamlToArm` to allow the user to change the severity of the ANR
+
 ### v2.2.1
 
  * FEATURE: Add new parameter `-NamePrefix` for `Convert-SentinelARYamlToArm` to allow the user to add a prefix to the ANR name

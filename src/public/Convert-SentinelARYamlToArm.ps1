@@ -34,6 +34,9 @@ Set API version of the ARM template. Default is "2022-11-01-preview"
 .PARAMETER NamePrefix
 Set prefix for the name of the ARM template. Default is none
 
+.PARAMETER Severity
+Overwrite the severity of the provided YAML file with a custom one. Default is emtpy
+
 .EXAMPLE
 Convert-SentinelARYamlToArm -Filename "C:\Temp\MyRule.yaml" -OutFile "C:\Temp\MyRule.json"
 
@@ -86,7 +89,11 @@ function Convert-SentinelARYamlToArm {
         [string]$APIVersion = "2022-11-01-preview",
 
         [Parameter()]
-        [string]$NamePrefix
+        [string]$NamePrefix,
+
+        [ValidateSet("Informational", "Low", "Medium", "High")]
+        [Parameter()]
+        [string]$Severity
     )
 
     begin {
@@ -135,6 +142,11 @@ function Convert-SentinelARYamlToArm {
         # Add prefix to name if specified
         if ($NamePrefix) {
             $analyticRule.name = $NamePrefix + $analyticRule.name
+        }
+
+        # Overwrite severity with custom severity
+        if (-not [string]::IsNullOrWhiteSpace($Severity) ) {
+            $analyticRule.severity = $Severity
         }
 
         Write-Verbose "Convert Analytics Rule $($analyticRule.name) ($($analyticRule.id)) to ARM template"
