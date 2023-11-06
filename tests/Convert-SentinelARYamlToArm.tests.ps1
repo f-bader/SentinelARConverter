@@ -277,7 +277,7 @@ Describe "Convert-SentinelARYamlToArm" {
         }
 
         It "Should fail when invalid severity is used" {
-            Convert-SentinelARYamlToArm -Filename "TestDrive:/Scheduled.yaml" -OutFile "TestDrive:/Scheduled-WrongSeverity.json" -Severity "SUPERIMPORTANT" | Should -Throw
+            { Convert-SentinelARYamlToArm -Filename "TestDrive:/Scheduled.yaml" -OutFile "TestDrive:/Scheduled-WrongSeverity.json" -Severity "SUPERIMPORTANT" } | Should -Throw
         }
     }
 
