@@ -266,7 +266,7 @@ Describe "Convert-SentinelARYamlToArm" {
             Remove-Item -Path "TestDrive:/*" -Include *.json -Force
         }
 
-        It "Should have the prefix at the start of the displayname" {
+        It "Should have the provided severity of Informational" {
             $armTemplate.resources[0].properties.severity | Should -Be "Informational"
         }
 
