@@ -258,6 +258,21 @@ function Convert-SentinelARYamlToArm {
             }
         }
 
+        # Remove any subtechniques from the techniques array
+        if ($ARMTemplate.techniques) {
+            $ARMTemplate.techniques = $ARMTemplate.techniques -replace "(T\d{4})\.\d{3}", '$1'
+        }
+
+        # Remove any invalid or non-existent techniques from the techniques array
+        if ($ARMTemplate.techniques) {
+            $ARMTemplate.techniques = $ARMTemplate.techniques | Where-Object { Test-MITRETechnique $_ }
+        }
+
+        # Remove any invalid or non-existent tactics from the tactics array
+        if ($ARMTemplate.tactics) {
+            $ARMTemplate.tactics = $ARMTemplate.tactics | Where-Object { Test-MITRETactic $_ }
+        }
+
         # Convert hashtable to JSON
         $JSON = $ARMTemplate | ConvertTo-Json -Depth 99
         # Use ISO8601 format for timespan values
