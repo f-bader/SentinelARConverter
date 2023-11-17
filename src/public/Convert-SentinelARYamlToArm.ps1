@@ -268,9 +268,19 @@ function Convert-SentinelARYamlToArm {
             $ARMTemplate.techniques = $ARMTemplate.techniques | Where-Object { Test-MITRETechnique $_ }
         }
 
+        # Remove duplicate techniques
+        if ($ARMTemplate.techniques) {
+            $ARMTemplate.techniques = $ARMTemplate.techniques | Sort-Object -Unique
+        }
+
         # Remove any invalid or non-existent tactics from the tactics array
         if ($ARMTemplate.tactics) {
             $ARMTemplate.tactics = $ARMTemplate.tactics | Where-Object { Test-MITRETactic $_ }
+        }
+
+        # Remove duplicate tactics
+        if ($ARMTemplate.tactics) {
+            $ARMTemplate.tactics = $ARMTemplate.tactics | Sort-Object -Unique
         }
 
         # Convert hashtable to JSON
