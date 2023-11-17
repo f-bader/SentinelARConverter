@@ -74,6 +74,10 @@ If no output file path is given, the output will be send to `stdout`
 
 ## Changelog
 
+### v2.2.3
+
+ * FEATURE: Add validation and auto-correction of invalid MITRE ATT&CK® tactics and techniques when converting YAML files to ARM templates
+
 ### v2.2.2
 
  * FEATURE: Add new parameter `-Severity` for `Convert-SentinelARYamlToArm` to allow the user to change the severity of the ANR
