@@ -9,6 +9,9 @@ param(
     [String]
     $NRTexampleScheduledFilePath = "./tests/examples/NRT.yaml",
     [Parameter()]
+    [String]
+    $exampleScheduledTTPWithSubtechniqueFilePath = "./tests/examples/TTPWithSubtechnique.yaml",
+    [Parameter()]
     [Switch]
     $RetainTestFiles = $false
 )
@@ -263,7 +266,9 @@ Describe "Convert-SentinelARYamlToArm" {
         }
 
         AfterEach {
-            Remove-Item -Path "TestDrive:/*" -Include *.json -Force
+            if ( -not $RetainTestFiles) {
+                Remove-Item -Path "TestDrive:/*" -Include *.json -Force
+            }
         }
 
         It "Should have the provided severity of Informational" {
@@ -278,6 +283,29 @@ Describe "Convert-SentinelARYamlToArm" {
 
         It "Should fail when invalid severity is used" {
             { Convert-SentinelARYamlToArm -Filename "TestDrive:/Scheduled.yaml" -OutFile "TestDrive:/Scheduled-WrongSeverity.json" -Severity "SUPERIMPORTANT" } | Should -Throw
+        }
+    }
+
+    Context "Scheduled with TTP subtechniques" -Tag Integration {
+        BeforeAll {
+            Copy-Item -Path $exampleScheduledTTPWithSubtechniqueFilePath -Destination "TestDrive:/Scheduled.yaml" -Force
+            Convert-SentinelARYamlToArm -Filename "TestDrive:/Scheduled.yaml" -OutFile "TestDrive:/Scheduled.json"
+            $armTemplate = Get-Content -Path "TestDrive:/Scheduled.json" -Raw | ConvertFrom-Json
+            $YAMLSourceContent = Get-Content -Path "TestDrive:/Scheduled.yaml" -Raw | ConvertFrom-Yaml
+        }
+
+        AfterEach {
+            if ( -not $RetainTestFiles) {
+                Remove-Item -Path "TestDrive:/*" -Include *.yaml -Force
+            }
+        }
+
+        It "Should not have empty subtechniques" {
+            $armTemplate.resources[0].properties.techniques | Should -Not -BeNullOrEmpty -Because "Source YAML file has techniques defined"
+        }
+
+        It "Should have subtechniques removed" {
+            $armTemplate.resources[0].properties.techniques | Should -Be "T1078" -Because "Microsoft Sentinel does not support subtechniques"
         }
     }
 
