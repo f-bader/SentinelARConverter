@@ -37,6 +37,11 @@ Set prefix for the name of the ARM template. Default is none
 .PARAMETER Severity
 Overwrite the severity of the provided YAML file with a custom one. Default is emtpy
 
+.PARAMETER StartRunningAt
+Set the startTimeUtc property of the ARM template. Default is empty
+To successfully deploy the ARM template the startTimeUtc property must be set to a future date.
+Start time must be between 10 minutes and 30 days from now. This is not validated by the cmdlet.
+
 .EXAMPLE
 Convert-SentinelARYamlToArm -Filename "C:\Temp\MyRule.yaml" -OutFile "C:\Temp\MyRule.json"
 
@@ -86,14 +91,17 @@ function Convert-SentinelARYamlToArm {
 
         [ValidatePattern('^\d{4}-\d{2}-\d{2}(-preview)?$')]
         [Parameter()]
-        [string]$APIVersion = "2022-11-01-preview",
+        [string]$APIVersion = "2023-02-01-preview",
 
         [Parameter()]
         [string]$NamePrefix,
 
         [ValidateSet("Informational", "Low", "Medium", "High")]
         [Parameter()]
-        [string]$Severity
+        [string]$Severity,
+
+        [Parameter()]
+        [datetime]$StartRunningAt
     )
 
     begin {
@@ -270,7 +278,7 @@ function Convert-SentinelARYamlToArm {
 
         # Remove duplicate techniques
         if ($ARMTemplate.techniques) {
-            $ARMTemplate.techniques = $ARMTemplate.techniques | Sort-Object -Unique
+            $ARMTemplate.techniques = @($ARMTemplate.techniques | Sort-Object -Unique)
         }
 
         # Remove any invalid or non-existent tactics from the tactics array
@@ -280,7 +288,19 @@ function Convert-SentinelARYamlToArm {
 
         # Remove duplicate tactics
         if ($ARMTemplate.tactics) {
-            $ARMTemplate.tactics = $ARMTemplate.tactics | Sort-Object -Unique
+            $ARMTemplate.tactics = @($ARMTemplate.tactics | Sort-Object -Unique)
+        }
+
+        # Add startRunningAt property if specified
+        if ($StartRunningAt -and $analyticRule.kind -eq "Scheduled") {
+            # Remove existing startTimeUtc property
+            if ("startTimeUtc" -in $ARMTemplate.Keys) {
+                $ARMTemplate.Remove("startTimeUtc")
+            }
+            # Add new startTimeUtc property
+            $ARMTemplate.Add("startTimeUtc", $StartRunningAt.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ"))
+        } elseif ($StartRunningAt) {
+            Write-Warning "StartRunningAt parameter is only supported for scheduled rules. Ignoring parameter."
         }
 
         # Convert hashtable to JSON

@@ -286,6 +286,29 @@ Describe "Convert-SentinelARYamlToArm" {
         }
     }
 
+    Context "Scheduled with StartRunningAt parameter" {
+        BeforeAll {
+            Copy-Item -Path $exampleScheduledFilePath -Destination "TestDrive:/Scheduled.yaml" -Force
+            [datetime]$StartRunningAt = "2022-01-01T00:00:00Z"
+            Convert-SentinelARYamlToArm -Filename "TestDrive:/Scheduled.yaml" -OutFile "TestDrive:/Scheduled.json" -StartRunningAt $StartRunningAt
+            $armTemplate = Get-Content -Path "TestDrive:/Scheduled.json" -Raw | ConvertFrom-Json
+        }
+
+        AfterEach {
+            if ( -not $RetainTestFiles) {
+                Remove-Item -Path "TestDrive:/*" -Include *.json -Force
+            }
+        }
+
+        It "Should have the correct startRunningAt" {
+            ([datetime]$armTemplate.resources[0].properties.startTimeUtc).ToString("yyyy-MM-ddTHH:mm:ssZ") | Should -Be "2022-01-01T00:00:00Z"
+        }
+
+        It "Should abort on invalid startRunningAt format" {
+            { Convert-SentinelARYamlToArm -Filename "TestDrive:/Scheduled.yaml" -StartRunningAt "Tomorrow" } | Should -Throw
+        }
+    }
+
     Context "Scheduled with TTP subtechniques and invalid techniques" -Tag Integration {
         BeforeAll {
             Copy-Item -Path $exampleScheduledTTPFilePath -Destination "TestDrive:/Scheduled.yaml" -Force
@@ -315,6 +338,10 @@ Describe "Convert-SentinelARYamlToArm" {
         It "Should not contain non-existent MITRE techniques" {
             $armTemplate.resources[0].properties.techniques | Should -Not -Contain "T9912" -Because "T9912 is not an existend technique"
         }
+
+        It "Should be of type array" {
+            $armTemplate.resources[0].properties.techniques -is [System.Array] | Should -Be $true
+        }
     }
 
     Context "Scheduled with TTP invalid tactics" -Tag Integration {
@@ -341,6 +368,10 @@ Describe "Convert-SentinelARYamlToArm" {
 
         It "Should not contain non-existent MITRE tactics" {
             $armTemplate.resources[0].properties.tactics | Should -Not -Contain "SneakySquirrel" -Because "Sneaky Squirrel is not an officially recognized tactic"
+        }
+
+        It "Should be of type array" {
+            $armTemplate.resources[0].properties.tactics -is [System.Array] | Should -Be $true
         }
     }
 

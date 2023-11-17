@@ -77,6 +77,8 @@ If no output file path is given, the output will be send to `stdout`
 ### v2.2.3
 
  * FEATURE: Add validation and auto-correction of invalid MITRE ATT&CK® tactics and techniques when converting YAML files to ARM templates
+ * FEATURE: Add new parameter `-StartRunningAt` for `Convert-SentinelARYamlToArm` to allow the user to change the start time of a newly deployed rule. (Sentinel Preview feature)
+ * MINOR:   Update default APIVersion to '2023-02-01-preview'
 
 ### v2.2.2
 
