@@ -9,6 +9,9 @@ param(
     [String]
     $NRTexampleScheduledFilePath = "./tests/examples/NRT.yaml",
     [Parameter()]
+    [String]
+    $exampleScheduledTTPFilePath = "./tests/examples/TTPWithTacticsNTechniques.yaml",
+    [Parameter()]
     [Switch]
     $RetainTestFiles = $false
 )
@@ -263,7 +266,9 @@ Describe "Convert-SentinelARYamlToArm" {
         }
 
         AfterEach {
-            Remove-Item -Path "TestDrive:/*" -Include *.json -Force
+            if ( -not $RetainTestFiles) {
+                Remove-Item -Path "TestDrive:/*" -Include *.json -Force
+            }
         }
 
         It "Should have the provided severity of Informational" {
@@ -278,6 +283,64 @@ Describe "Convert-SentinelARYamlToArm" {
 
         It "Should fail when invalid severity is used" {
             { Convert-SentinelARYamlToArm -Filename "TestDrive:/Scheduled.yaml" -OutFile "TestDrive:/Scheduled-WrongSeverity.json" -Severity "SUPERIMPORTANT" } | Should -Throw
+        }
+    }
+
+    Context "Scheduled with TTP subtechniques and invalid techniques" -Tag Integration {
+        BeforeAll {
+            Copy-Item -Path $exampleScheduledTTPFilePath -Destination "TestDrive:/Scheduled.yaml" -Force
+            Convert-SentinelARYamlToArm -Filename "TestDrive:/Scheduled.yaml" -OutFile "TestDrive:/Scheduled.json"
+            $armTemplate = Get-Content -Path "TestDrive:/Scheduled.json" -Raw | ConvertFrom-Json
+            $YAMLSourceContent = Get-Content -Path "TestDrive:/Scheduled.yaml" -Raw | ConvertFrom-Yaml
+        }
+
+        AfterEach {
+            if ( -not $RetainTestFiles) {
+                Remove-Item -Path "TestDrive:/*" -Include *.yaml -Force
+            }
+        }
+
+        It "Should not have empty MITRE subtechniques" {
+            $armTemplate.resources[0].properties.techniques | Should -Not -BeNullOrEmpty -Because "Source YAML file has techniques defined"
+        }
+
+        It "Should have MITRE subtechniques removed" {
+            $armTemplate.resources[0].properties.techniques | Should -Be "T1078" -Because "Microsoft Sentinel does not support subtechniques"
+        }
+
+        It "Should not contain obviously invalid MITRE techniques" {
+            $armTemplate.resources[0].properties.techniques | Should -Not -Contain "Z1001" -Because "Z1001 is not a valid technique"
+        }
+
+        It "Should not contain non-existent MITRE techniques" {
+            $armTemplate.resources[0].properties.techniques | Should -Not -Contain "T9912" -Because "T9912 is not an existend technique"
+        }
+    }
+
+    Context "Scheduled with TTP invalid tactics" -Tag Integration {
+        BeforeAll {
+            Copy-Item -Path $exampleScheduledTTPFilePath -Destination "TestDrive:/Scheduled.yaml" -Force
+            Convert-SentinelARYamlToArm -Filename "TestDrive:/Scheduled.yaml" -OutFile "TestDrive:/Scheduled.json"
+            $armTemplate = Get-Content -Path "TestDrive:/Scheduled.json" -Raw | ConvertFrom-Json
+            $YAMLSourceContent = Get-Content -Path "TestDrive:/Scheduled.yaml" -Raw | ConvertFrom-Yaml
+        }
+
+        AfterEach {
+            if ( -not $RetainTestFiles) {
+                Remove-Item -Path "TestDrive:/*" -Include *.yaml -Force
+            }
+        }
+
+        It "Should not have empty MITRE tactic" {
+            $armTemplate.resources[0].properties.tactics | Should -Not -BeNullOrEmpty -Because "Source YAML file has tactics defined"
+        }
+
+        It "Should have MITRE subtechniques removed" {
+            $armTemplate.resources[0].properties.tactics | Should -Be "Persistence" -Because "Microsoft Sentinel only supports valid tactics"
+        }
+
+        It "Should not contain non-existent MITRE tactics" {
+            $armTemplate.resources[0].properties.tactics | Should -Not -Contain "SneakySquirrel" -Because "Sneaky Squirrel is not an officially recognized tactic"
         }
     }
 
