@@ -338,6 +338,10 @@ Describe "Convert-SentinelARYamlToArm" {
         It "Should not contain non-existent MITRE techniques" {
             $armTemplate.resources[0].properties.techniques | Should -Not -Contain "T9912" -Because "T9912 is not an existend technique"
         }
+
+        It "Should be of type array" {
+            $armTemplate.resources[0].properties.techniques -is [System.Array] | Should -Be $true
+        }
     }
 
     Context "Scheduled with TTP invalid tactics" -Tag Integration {
@@ -364,6 +368,10 @@ Describe "Convert-SentinelARYamlToArm" {
 
         It "Should not contain non-existent MITRE tactics" {
             $armTemplate.resources[0].properties.tactics | Should -Not -Contain "SneakySquirrel" -Because "Sneaky Squirrel is not an officially recognized tactic"
+        }
+
+        It "Should be of type array" {
+            $armTemplate.resources[0].properties.tactics -is [System.Array] | Should -Be $true
         }
     }
 

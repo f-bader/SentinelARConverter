@@ -278,7 +278,7 @@ function Convert-SentinelARYamlToArm {
 
         # Remove duplicate techniques
         if ($ARMTemplate.techniques) {
-            $ARMTemplate.techniques = $ARMTemplate.techniques | Sort-Object -Unique
+            $ARMTemplate.techniques = @($ARMTemplate.techniques | Sort-Object -Unique)
         }
 
         # Remove any invalid or non-existent tactics from the tactics array
@@ -288,17 +288,19 @@ function Convert-SentinelARYamlToArm {
 
         # Remove duplicate tactics
         if ($ARMTemplate.tactics) {
-            $ARMTemplate.tactics = $ARMTemplate.tactics | Sort-Object -Unique
+            $ARMTemplate.tactics = @($ARMTemplate.tactics | Sort-Object -Unique)
         }
 
         # Add startRunningAt property if specified
-        if ($StartRunningAt) {
+        if ($StartRunningAt -and $analyticRule.kind -eq "Scheduled") {
             # Remove existing startTimeUtc property
             if ("startTimeUtc" -in $ARMTemplate.Keys) {
                 $ARMTemplate.Remove("startTimeUtc")
             }
             # Add new startTimeUtc property
             $ARMTemplate.Add("startTimeUtc", $StartRunningAt.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ"))
+        } elseif ($StartRunningAt) {
+            Write-Warning "StartRunningAt parameter is only supported for scheduled rules. Ignoring parameter."
         }
 
         # Convert hashtable to JSON
