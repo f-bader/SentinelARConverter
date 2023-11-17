@@ -15,8 +15,11 @@ triggerThreshold: 0
 status: Available
 tactics:
   - Persistence
+  - SneakySquirrel
 relevantTechniques:
   - T1078.004
+  - Z1001.02
+  - T9912
 tags:
   - AADSecOpsGuide
 query: |
