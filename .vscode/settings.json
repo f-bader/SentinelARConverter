@@ -5,5 +5,7 @@
   "powershell.codeFormatting.whitespaceBetweenParameters": true,
   "powershell.codeFormatting.preset": "OTBS",
   "powershell.scriptAnalysis.settingsPath": "tests/ScriptAnalyzerSettings.psd1",
-  "powershell.scriptAnalysis.enable": true
+  "powershell.scriptAnalysis.enable": true,
+  "files.trimFinalNewlines": true,
+  "files.trimTrailingWhitespace": true
 }
