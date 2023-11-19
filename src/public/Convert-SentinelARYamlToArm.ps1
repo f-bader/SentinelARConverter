@@ -142,7 +142,7 @@ function Convert-SentinelARYamlToArm {
         }
 
         # Generate new guid if id is not a valid guid
-        if ($analyticRule.id -notmatch "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}") {
+        if ( $analyticRule.id -notmatch "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}" -and $analyticRule.id -ne "BuiltInFusion" ) {
             Write-Warning "Error reading current Id. Generating new Id."
             $analyticRule.id = (New-Guid).Guid
         }
@@ -253,17 +253,59 @@ function Convert-SentinelARYamlToArm {
 
         # Add required parameters if missing with default values
         $RequiredParameters = @{
+            "enabled" = $true
+        }
+
+        $RequiredParametersScheduled = @{
+            "templateVersion"     = "1.0.0"
             "suppressionDuration" = "PT1H"
             "suppressionEnabled"  = $false
-            "enabled"             = $true
             "customDetails"       = $null
             "entityMappings"      = $null
-            "templateVersion"     = "1.0.0"
         }
+
+        # Add required parameters for all rule types
         foreach ( $KeyName in $RequiredParameters.Keys ) {
             if (  $KeyName -notin $ARMTemplate.Keys ) {
                 $ARMTemplate.Add($KeyName, $RequiredParameters[$KeyName])
             }
+        }
+
+        # Add required parameters for scheduled and NRT rules
+        if ( $analyticRule.kind -in @("Scheduled", "NRT") ) {
+            foreach ( $KeyName in $RequiredParametersScheduled.Keys ) {
+                if (  $KeyName -notin $ARMTemplate.Keys ) {
+                    $ARMTemplate.Add($KeyName, $RequiredParametersScheduled[$KeyName])
+                }
+            }
+        }
+
+        # Remove property not allowed if the Analytics Rule type is BuiltInFusion
+        if ($analyticRule.id -eq "BuiltInFusion") {
+            if ("displayName" -in $ARMTemplate.Keys) {
+                $ARMTemplate.Remove("displayName")
+            }
+            if ("templateVersion" -in $ARMTemplate.Keys) {
+                $ARMTemplate.Remove("templateVersion")
+            }
+            if ("techniques" -in $ARMTemplate.Keys) {
+                $ARMTemplate.Remove("techniques")
+            }
+            if ("tactics" -in $ARMTemplate.Keys) {
+                $ARMTemplate.Remove("tactics")
+            }
+        }
+
+        # Replace alert rule template name with constant value for Fusion and ML rules
+        # See https://learn.microsoft.com/en-us/powershell/module/az.securityinsights/new-azsentinelalertrule?view=azps-10.4.1
+        if ($analyticRule.kind -eq "Fusion") {
+            $ARMTemplate.alertRuleTemplateName = "f71aba3d-28fb-450b-b192-4e76a83015c8"
+        } elseif ($analyticRule.kind -eq "MLBehaviorAnalytics") {
+            $ARMTemplate.alertRuleTemplateName = "fa118b98-de46-4e94-87f9-8e6d5060b60b"
+        } elseif ($analyticRule.kind -eq "ThreatIntelligence" ) {
+            $ARMTemplate.alertRuleTemplateName = "0dd422ee-e6af-4204-b219-f59ac172e4c6"
+        } elseif ($analyticRule.kind -eq "MicrosoftSecurityIncidentCreation") {
+            $ARMTemplate.alertRuleTemplateName = "a2e0eb51-1f11-461a-999b-cd0ebe5c7a72"
         }
 
         # Remove any subtechniques from the techniques array

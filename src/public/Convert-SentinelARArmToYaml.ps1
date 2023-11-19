@@ -224,7 +224,7 @@ function Convert-SentinelARArmToYaml {
         $resourceCounter = 0
 
         foreach ($resource in ( $AnalyticsRuleTemplate.resources | Where-Object { $_.type -eq "Microsoft.OperationalInsights/workspaces/providers/alertRules" } ) ) {
-            if ( $resource.kind -notin @("Scheduled", "NRT") ) {
+            if ( $resource.kind -notin @("Scheduled", "NRT", "Fusion") ) {
                 Write-Warning "Analytics Rule $($resource.properties.displayName) is using an unsupported type `"$($resource.kind)`". Only type `"Scheduled`", `"NRT`" are supported."
                 Continue
             } elseif ($resource.kind -eq "NRT") {
@@ -247,6 +247,10 @@ function Convert-SentinelARArmToYaml {
             # Get the id of the analytic rule
             if ($resource.id -match "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}") {
                 $Id = $Matches[0]
+            } elseif ( $resource.id -match "BuiltInFusion" ) {
+                $Id = "BuiltInFusion"
+                # Add static display name for built-in Fusion rules
+                $resource.properties | Add-Member -MemberType NoteProperty -Name "displayName" -Value "Built-in Fusion rule"
             } else {
                 Write-Warning "Error reading current Id. Generating new Id."
                 $Id = (New-Guid).Guid
