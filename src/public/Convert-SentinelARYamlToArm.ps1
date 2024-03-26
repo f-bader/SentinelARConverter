@@ -42,6 +42,9 @@ Set the startTimeUtc property of the ARM template. Default is empty
 To successfully deploy the ARM template the startTimeUtc property must be set to a future date.
 Start time must be between 10 minutes and 30 days from now. This is not validated by the cmdlet.
 
+.PARAMETER DisableIncidentCreation
+If set, the incidentCreation property of the ARM template will be set to false. Default is to keep the value from the YAML file.
+
 .EXAMPLE
 Convert-SentinelARYamlToArm -Filename "C:\Temp\MyRule.yaml" -OutFile "C:\Temp\MyRule.json"
 
@@ -101,7 +104,10 @@ function Convert-SentinelARYamlToArm {
         [string]$Severity,
 
         [Parameter()]
-        [datetime]$StartRunningAt
+        [datetime]$StartRunningAt,
+
+        [Parameter()]
+        [switch]$DisableIncidentCreation
     )
 
     begin {
@@ -301,6 +307,15 @@ function Convert-SentinelARYamlToArm {
             $ARMTemplate.Add("startTimeUtc", $StartRunningAt.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ"))
         } elseif ($StartRunningAt) {
             Write-Warning "StartRunningAt parameter is only supported for scheduled rules. Ignoring parameter."
+        }
+
+        # Disable incident creation if specified
+        if ($DisableIncidentCreation) {
+            # Remove existing createIncident property
+            if ("createIncident" -in $ARMTemplate.incidentConfiguration.Keys) {
+                $ARMTemplate.incidentConfiguration.Remove("createIncident")
+            }
+            $ARMTemplate.incidentConfiguration.Add("createIncident", $false)
         }
 
         # Convert hashtable to JSON
