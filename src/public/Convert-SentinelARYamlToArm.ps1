@@ -245,6 +245,12 @@ function Convert-SentinelARYamlToArm {
         # Replace API version with specified version
         $Template = $Template.Replace('<APIVERSION>', $APIVersion)
 
+        $SkipYamlValues = @(
+            "metadata",
+            "kind",
+            "requiredDataConnectors"
+        )
+
         # Only include the following keys in ARM template
         $DefaultSortOrderInArmTemplate = @(
             "displayName",
