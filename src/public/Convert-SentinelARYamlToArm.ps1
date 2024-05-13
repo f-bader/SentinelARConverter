@@ -251,30 +251,6 @@ function Convert-SentinelARYamlToArm {
             "requiredDataConnectors"
         )
 
-        # Only include the following keys in ARM template
-        $DefaultSortOrderInArmTemplate = @(
-            "displayName",
-            "description",
-            "severity",
-            "enabled",
-            "query",
-            "queryFrequency",
-            "queryPeriod",
-            "triggerOperator",
-            "triggerThreshold",
-            "suppressionDuration",
-            "suppressionEnabled",
-            "tactics",
-            "techniques",
-            "alertRuleTemplateName",
-            "incidentConfiguration",
-            "eventGroupingSettings",
-            "alertDetailsOverride",
-            "customDetails",
-            "entityMappings",
-            "sentinelEntitiesMappings"
-        )
-
         # Mapping of Arm template names to YAML name when different
         $ValueNameMappingYaml2Arm = [ordered]@{
             "name"               = "displayName"
