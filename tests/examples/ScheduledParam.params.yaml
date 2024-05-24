@@ -4,6 +4,8 @@ OverwriteProperties:
     To onboard Wazuh data into Sentinel please view: https://github.com/wazuh/wazuh-documentation/blob/master/source/azure/monitoring%20activity.rst
   queryFrequency: 1h
   queryPeriod: 1h
+  customDetails:
+    HostName: HostName
 PrependQuery: |
   // Example description. Will be added to the beginning of the query.
 AppendQuery: |
@@ -12,5 +14,5 @@ AppendQuery: |
 ReplaceQueryVariables:
   NumberOfErrors: 200
   ErrorCodes:
-    - "403"
+    - 403
     - "404"

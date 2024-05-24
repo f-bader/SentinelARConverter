@@ -175,6 +175,9 @@ function Convert-SentinelARYamlToArm {
                     if ($analyticRule.ContainsKey($Key)) {
                         Write-Verbose "Overwriting property $Key with $($Parameters.OverwriteProperties[$Key])"
                         $analyticRule[$Key] = $Parameters.OverwriteProperties[$Key]
+                    } else {
+                        Write-Verbose "Add new property $Key with $($Parameters.OverwriteProperties[$Key])"
+                        $analyticRule.Add($Key, $Parameters.OverwriteProperties[$Key])
                     }
                 }
             } else {

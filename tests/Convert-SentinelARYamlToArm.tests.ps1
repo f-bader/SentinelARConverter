@@ -419,6 +419,10 @@ Describe "Convert-SentinelARYamlToArm" {
             $armTemplate.resources.properties.description | Should -Match "'403' or '404'"
         }
 
+        It "Should have all new properties from parameter file" {
+            $armTemplate.resources.properties.customDetails | Should -Not -BeNullOrEmpty
+        }
+
         It "Should have the correct added query values" {
             $armTemplate.resources.properties.query | Should -Match "// Example description. Will be added to the beginning of the query."
             $armTemplate.resources.properties.query | Should -Match "// Example text that will be added to the end of the query."
