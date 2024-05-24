@@ -2,6 +2,8 @@
 
 # Sentinel Analytics Rule converter
 
+[![PSGallery Version](https://img.shields.io/powershellgallery/v/SentinelARConverter.svg?style=flat&logo=powershell&label=PSGallery%20Version)](https://www.powershellgallery.com/packages/SentinelARConverter) [![PSGallery Downloads](https://img.shields.io/powershellgallery/dt/SentinelARConverter.svg?style=flat&logo=powershell&label=PSGallery%20Downloads)](https://www.powershellgallery.com/packages/SentinelARConverter)
+
 ## Installation
 
 ```PowerShell
@@ -72,7 +74,108 @@ Get-Content "C:\Users\User\Downloads\Azure_Sentinel_analytic_rule.yaml" | Conver
 
 If no output file path is given, the output will be send to `stdout`
 
+```PowerShell
+Convert-SentinelARYamlToArm -Filename "C:\Users\User\Downloads\Azure_Sentinel_analytic_rule.yaml" -ParameterFile "C:\Users\User\Downloads\Azure_Sentinel_analytic_rule.params.yaml" -UseOriginalFilename 
+```
+
+In this case the yaml file is converted and saved with the original file name (`Azure_Sentinel_analytic_rule.json`) but in the process of converting the file additional changes, according to the parameter file are applied.
+
+## Parameter file
+
+There are four different types of parametrization you can use. Each must be defined in it's own subsection.
+
+There is no validation of the values provided, which can result in invalid arm templates.
+
+Only [valid properties](https://learn.microsoft.com/en-us/azure/templates/microsoft.securityinsights/alertrules?pivots=deployment-language-arm-template#scheduledalertruleproperties-1) should be added.
+
+```yaml
+OverwriteProperties:
+  queryFrequency: 1h
+  queryPeriod: 1h
+PrependQuery: |
+  // Example description. Will be added to the beginning of the query.
+AppendQuery: |
+  // Example text that will be added to the end of the query.
+ReplaceQueryVariables:
+  NumberOfErrors: 200
+  ErrorCodes:
+    - "403"
+    - "404"
+```
+
+### OverwriteProperties
+
+Every key found in this section is used to either replace the existing key or is added as a new key to the resulting ARM template. Make sure to use the correct spacing to ensure that the correct keys are overwritten.
+
+```yaml
+OverwriteProperties:
+  queryFrequency: 1h
+  queryPeriod: 1h
+```
+
+In this example the `queryFrequency` and the `queryPeriod` are adjusted.
+
+### PrependQuery
+
+This text will be added to the beginning of the KQL query. If `PrependQuery: |` is used, a newline will be added automatically. If you use `PrependQuery: |-` no newline will be written.
+
+```yaml
+PrependQuery: |
+  // Example description. Will be added to the beginning of the query.
+```
+
+This example adds a description at the top of the KQL query and adds a newline.
+
+### AppendQuery
+
+Add text at the end of the KQL query. This ways you can extend the query, add additional filters or rename certain fields.
+
+```yaml
+AppendQuery: |
+  | extend TimeGenerated = StartTime
+```
+
+Adds the line to the end of the query and adds a new column named `TimeGenerated` based on value of the `StartTime` column.
+
+### ReplaceQueryVariables
+
+This section allows you to use variable names in your original YAML file. They will be replaced by the value provided in the parameter file. There is support for simple string replacement and arrays.
+
+All variables must be named using two percent sign at the beginning and the end e.g. `%%VARIABLENAME%%`.
+
+* String values are replaced as is.
+* Array values are joined together using `","` and a single `"` is added at the start and end. The resulting string is used to replace the variable.
+
+```yaml
+ReplaceQueryVariables:
+  NumberOfErrors: 200
+  ErrorCodes:
+    - 403
+    - 404
+```
+
+* The variable `%%NumberOfErrors%%` will be replaced by the string value `200`
+* Before the variable `%%ErrorCodes%%` will be replaced, the `ErrorCodes` array will be converted into a single string `"403","404"`
+
+This way the following KQL query will be converted...
+
+```kql
+| where Message in (%%ErrorCodes%%)
+| summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated), NumberOfErrors = dcount(SourceIP) by HostName, SourceIP
+| where NumberOfErrors > %%NumberOfErrors%%
+```
+...to this result:
+
+```kql
+| where Message in ("403","404")
+| summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated), NumberOfErrors = dcount(SourceIP) by HostName, SourceIP
+| where NumberOfErrors > 200
+```
+
 ## Changelog
+
+### 2.3.0
+ * FEATURE: Add the option to specify a parameter file. This gives a maximum of flexbility to manipulate existing YAML files.
 
 ### v2.2.3
 
