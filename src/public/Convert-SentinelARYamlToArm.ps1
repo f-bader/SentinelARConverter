@@ -104,6 +104,9 @@ function Convert-SentinelARYamlToArm {
         [string]$Severity,
 
         [Parameter()]
+        [string]$ParameterFile,
+
+        [Parameter()]
         [datetime]$StartRunningAt,
 
         [Parameter()]
@@ -118,6 +121,16 @@ function Convert-SentinelARYamlToArm {
                 }
             } catch {
                 throw "File not found"
+            }
+        }
+
+        if ($ParameterFile) {
+            try {
+                if (-not (Test-Path $ParameterFile)) {
+                    Write-Error -Exception
+                }
+            } catch {
+                throw "Parameters file not found"
             }
         }
     }
@@ -142,6 +155,71 @@ function Convert-SentinelARYamlToArm {
         } catch {
             throw "Could not convert source file. YAML might be corrupted"
         }
+
+        try {
+            if ($ParameterFile) {
+                Write-Verbose "Read parameters file `"$ParameterFile`""
+                $Parameters = Get-Content $ParameterFile | ConvertFrom-Yaml
+            } else {
+                Write-Verbose "No parameters file provided"
+            }
+        } catch {
+            throw "Could not convert parameters file. YAML might be corrupted"
+        }
+
+        #region Parameter file handling
+        if ($Parameters) {
+            #region Overwrite values from parameters file
+            if ($Parameters.OverwriteProperties) {
+                foreach ($Key in $Parameters.OverwriteProperties.Keys) {
+                    if ($analyticRule.ContainsKey($Key)) {
+                        Write-Verbose "Overwriting property $Key with $($Parameters.OverwriteProperties[$Key])"
+                        $analyticRule[$Key] = $Parameters.OverwriteProperties[$Key]
+                    }
+                }
+            } else {
+                Write-Verbose "No properties to overwrite in provided parameters file"
+            }
+            #endregion Overwrite values from parameters file
+
+            #region Prepend KQL query with data from parameters file
+            if ($Parameters.PrependQuery) {
+                $analyticRule.query = $Parameters.PrependQuery + $analyticRule.query
+            } else {
+                Write-Verbose "No query to prepend in provided parameters file"
+            }
+            #endregion Prepend KQL query with data from parameters file
+
+            #region Append KQL query with data from parameters file
+            if ($Parameters.AppendQuery) {
+                $analyticRule.query = $analyticRule.query + $Parameters.AppendQuery
+            } else {
+                Write-Verbose "No query to append in provided parameters file"
+            }
+            #endregion Append KQL query with data from parameters file
+
+            #region Replace variables in KQL query with data from parameters file
+            if ($Parameters.ReplaceQueryVariables) {
+                foreach ($Key in $Parameters.ReplaceQueryVariables.Keys) {
+                    if ($Parameters.ReplaceQueryVariables[$Key].Count -gt 1) {
+                        # Join array values with comma and wrap in quotes
+                        $ReplaceValue = $Parameters.ReplaceQueryVariables[$Key] -join '","'
+                        $ReplaceValue = '"' + $ReplaceValue + '"'
+                    } else {
+                        # Use single value
+                        $ReplaceValue = $Parameters.ReplaceQueryVariables[$Key]
+                    }
+                    Write-Verbose "Replacing variable %%$Key%% with $($ReplaceValue)"
+                    $analyticRule.query = $analyticRule.query -replace "%%$($Key)%%", $ReplaceValue
+                }
+            } else {
+                Write-Verbose "No variables to replace in provided parameters file"
+            }
+            #endregion Replace variables in KQL query with data from parameters file
+
+            Write-Verbose "$($analyticRule | ConvertTo-Json -Depth 99)"
+        }
+        #endregion Parameter file handling
 
         if ( [string]::IsNullOrWhiteSpace($analyticRule.name) -or [string]::IsNullOrWhiteSpace($analyticRule.id) ) {
             throw "Analytics Rule name or id is empty. YAML might be corrupted"
