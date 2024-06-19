@@ -353,11 +353,6 @@ function Convert-SentinelARYamlToArm {
             }
         }
 
-        # Remove any subtechniques from the techniques array
-        if ($ARMTemplate.techniques) {
-            $ARMTemplate.techniques = $ARMTemplate.techniques -replace "(T\d{4})\.\d{3}", '$1'
-        }
-
         # Remove any invalid or non-existent techniques from the techniques array
         if ($ARMTemplate.techniques) {
             $ARMTemplate.techniques = $ARMTemplate.techniques | Where-Object { Test-MITRETechnique $_ }
