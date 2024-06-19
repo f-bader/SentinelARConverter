@@ -12,6 +12,12 @@ param(
     [String]
     $exampleScheduledTTPFilePath = "./tests/examples/TTPWithTacticsNTechniques.yaml",
     [Parameter()]
+    [String]
+    $exampleScheduledWithVariablesFilePath = "./tests/examples/ScheduledParam.yaml",
+    [Parameter()]
+    [String]
+    $exampleScheduledParameterFilePath = "./tests/examples/ScheduledParam.params.yaml",
+    [Parameter()]
     [Switch]
     $RetainTestFiles = $false
 )
@@ -390,6 +396,41 @@ Describe "Convert-SentinelARYamlToArm" {
 
         It "Should have the incident creation disabled" {
             $armTemplate.resources[0].properties.incidentConfiguration.createIncident | Should -Be $false
+        }
+    }
+
+    Context "Scheduled with parameter file provided" {
+        BeforeAll {
+            Copy-Item -Path $exampleScheduledWithVariablesFilePath -Destination "TestDrive:/Scheduled.yaml" -Force
+            Copy-Item -Path $exampleScheduledParameterFilePath -Destination "TestDrive:/ScheduledParam.params.yaml" -Force
+            Convert-SentinelARYamlToArm -Filename "TestDrive:/Scheduled.yaml" -OutFile "TestDrive:/Scheduled.json" -ParameterFile "TestDrive:/ScheduledParam.params.yaml"
+            $armTemplate = Get-Content -Path "TestDrive:/Scheduled.json" -Raw | ConvertFrom-Json
+        }
+
+        AfterEach {
+            if ( -not $RetainTestFiles) {
+                Remove-Item -Path "TestDrive:/*" -Include *.json -Force
+            }
+        }
+
+        It "Should have the correct replaced parameter values" {
+            $armTemplate.resources.properties.queryPeriod | Should -Be "PT1H"
+            $armTemplate.resources.properties.queryFrequency | Should -Be "PT1H"
+            $armTemplate.resources.properties.description | Should -Match "'403' or '404'"
+        }
+
+        It "Should have all new properties from parameter file" {
+            $armTemplate.resources.properties.customDetails | Should -Not -BeNullOrEmpty
+        }
+
+        It "Should have the correct added query values" {
+            $armTemplate.resources.properties.query | Should -Match "// Example description. Will be added to the beginning of the query."
+            $armTemplate.resources.properties.query | Should -Match "// Example text that will be added to the end of the query."
+        }
+
+        It "Should have the correct variables replaced" {
+            $armTemplate.resources.properties.query | Should -Match 'where Message in \("403","404"\)'
+            $armTemplate.resources.properties.query | Should -Match 'where NumberOfErrors > 200'
         }
     }
 

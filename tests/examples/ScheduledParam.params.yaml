@@ -1,0 +1,18 @@
+OverwriteProperties:
+  description: |-
+    Identifies instances where Wazuh logged over 200 '403' or '404' Web Errors from one IP Address.
+    To onboard Wazuh data into Sentinel please view: https://github.com/wazuh/wazuh-documentation/blob/master/source/azure/monitoring%20activity.rst
+  queryFrequency: 1h
+  queryPeriod: 1h
+  customDetails:
+    HostName: HostName
+PrependQuery: |
+  // Example description. Will be added to the beginning of the query.
+AppendQuery: |
+  // Example text that will be added to the end of the query.
+  | extend TimeGenerated = StartTime
+ReplaceQueryVariables:
+  NumberOfErrors: 200
+  ErrorCodes:
+    - 403
+    - "404"
