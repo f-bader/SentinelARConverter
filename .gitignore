@@ -1,2 +1,5 @@
 publish
 testResults.xml
+Launch.ps1
+.vscode/launch.json
+.vscode/settings.json
