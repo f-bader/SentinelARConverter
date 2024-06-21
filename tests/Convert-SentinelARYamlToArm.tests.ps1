@@ -315,7 +315,7 @@ Describe "Convert-SentinelARYamlToArm" {
         }
     }
 
-    Context "Scheduled with TTP subtechniques and invalid techniques" -Tag Integration {
+    Context "Scheduled with TTP sub-techniques and invalid techniques using old API" -Tag Integration {
         BeforeAll {
             Copy-Item -Path $exampleScheduledTTPFilePath -Destination "TestDrive:/Scheduled.yaml" -Force
             Convert-SentinelARYamlToArm -Filename "TestDrive:/Scheduled.yaml" -OutFile "TestDrive:/Scheduled.json"
@@ -329,12 +329,12 @@ Describe "Convert-SentinelARYamlToArm" {
             }
         }
 
-        It "Should not have empty MITRE subtechniques" {
+        It "Should not have empty MITRE sub-techniques" {
             $armTemplate.resources[0].properties.techniques | Should -Not -BeNullOrEmpty -Because "Source YAML file has techniques defined"
         }
 
-        It "Should have MITRE subtechniques removed" {
-            $armTemplate.resources[0].properties.techniques | Should -Be "T1078" -Because "Microsoft Sentinel does not support subtechniques"
+        It "Should have MITRE sub-techniques removed" {
+            $armTemplate.resources[0].properties.techniques | Should -Be "T1078" -Because "Microsoft Sentinel does not support sub-techniques"
         }
 
         It "Should not contain obviously invalid MITRE techniques" {
@@ -343,6 +343,45 @@ Describe "Convert-SentinelARYamlToArm" {
 
         It "Should not contain non-existent MITRE techniques" {
             $armTemplate.resources[0].properties.techniques | Should -Not -Contain "T9912" -Because "T9912 is not an existend technique"
+        }
+
+        It "Should be of type array" {
+            $armTemplate.resources[0].properties.techniques -is [System.Array] | Should -Be $true
+        }
+    }
+
+    Context "Scheduled with TTP sub-techniques and invalid techniques supporting sub-techniques" -Tag Integration {
+        BeforeAll {
+            Copy-Item -Path $exampleScheduledTTPFilePath -Destination "TestDrive:/Scheduled.yaml" -Force
+            Convert-SentinelARYamlToArm -Filename "TestDrive:/Scheduled.yaml" -OutFile "TestDrive:/Scheduled.json" -APIVersion "2023-12-01-preview"
+            $armTemplate = Get-Content -Path "TestDrive:/Scheduled.json" -Raw | ConvertFrom-Json
+            $YAMLSourceContent = Get-Content -Path "TestDrive:/Scheduled.yaml" -Raw | ConvertFrom-Yaml
+        }
+
+        AfterEach {
+            if ( -not $RetainTestFiles) {
+                Remove-Item -Path "TestDrive:/*" -Include *.yaml -Force
+            }
+        }
+
+        It "Should not have empty MITRE sub-techniques" {
+            $armTemplate.resources[0].properties.techniques | Should -Not -BeNullOrEmpty -Because "Source YAML file has techniques defined"
+        }
+
+        It "Should have MITRE sub-techniques removed" {
+            $armTemplate.resources[0].properties.techniques | Should -Be "T1078" -Because "Microsoft sub-techniques have their own property"
+        }
+
+        It "Should have MITRE sub-techniques" {
+            $armTemplate.resources[0].properties.subTechniques -join ", " | Should -Be "T1078.004, T1078.005" -Because "Z1001.02 is not a valid sub-technique"
+        }
+
+        It "Should not contain obviously invalid MITRE techniques" {
+            $armTemplate.resources[0].properties.techniques | Should -Not -Contain "Z1001" -Because "Z1001 is not a valid technique"
+        }
+
+        It "Should not contain non-existent MITRE techniques" {
+            $armTemplate.resources[0].properties.techniques | Should -Not -Contain "T9912" -Because "T9912 is not an existing technique"
         }
 
         It "Should be of type array" {
@@ -368,7 +407,7 @@ Describe "Convert-SentinelARYamlToArm" {
             $armTemplate.resources[0].properties.tactics | Should -Not -BeNullOrEmpty -Because "Source YAML file has tactics defined"
         }
 
-        It "Should have MITRE subtechniques removed" {
+        It "Should have MITRE sub-techniques removed" {
             $armTemplate.resources[0].properties.tactics | Should -Be "Persistence" -Because "Microsoft Sentinel only supports valid tactics"
         }
 

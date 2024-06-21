@@ -17,6 +17,7 @@ tactics:
   - Persistence
   - SneakySquirrel
 relevantTechniques:
+  - T1078
   - T1078.004
   - T1078.005
   - Z1001.02
