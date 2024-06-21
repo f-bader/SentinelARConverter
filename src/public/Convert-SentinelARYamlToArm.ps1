@@ -354,8 +354,7 @@ function Convert-SentinelARYamlToArm {
         }
         # Minimum API version that supports MITRE sub-techniques
         if (([datetime]::parseexact($APIVersion, 'yyyy-MM-dd-preview', $null)) -ge [datetime]"2023-12-01") {
-            # This does also work if a technique without any sub-technique was added
-            $ARMTemplate.subTechniques = $ARMTemplate.techniques
+            $ARMTemplate.subTechniques = $ARMTemplate.techniques | Where-Object { $_ -match "(T\d{4})\.\d{3}" }
         }
 
         # Remove any sub-techniques from the techniques array

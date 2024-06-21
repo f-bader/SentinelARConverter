@@ -149,10 +149,11 @@ function Convert-SentinelARArmToYaml {
 
         # Mapping of Arm property names to YAML when different
         $ValueNameMappingArm2Yaml = [ordered]@{
-            "displayName"           = "name"
-            "alertRuleTemplateName" = "id"
-            "templateVersion"       = "version"
-            "techniques"            = "relevantTechniques"
+            "name"               = "displayName"
+            "id"                 = "alertRuleTemplateName"
+            "version"            = "templateVersion"
+            "relevantTechniques" = "techniques"
+            "subTechniques"      = "techniques"
         }
 
         # Mapping of Arm operator names to YAML when different
@@ -343,7 +344,21 @@ function Convert-SentinelARArmToYaml {
                     if ([string]::IsNullOrWhiteSpace($KeyName)) {
                         $KeyName = $PropertyName
                     }
-                    if ( -not $AnalyticsRuleCleaned.Contains($KeyName) ) {
+                    # Special case for subTechniques since it overwrites the same property as relevantTechnique
+                    # We must merge them since (relevant)techniques could contain values not preset in subTechniques
+                    if ($AnalyticsRuleCleaned.Contains($KeyName) -and $PropertyName -like "*techniques") {
+                        foreach ($value in $AnalyticsRule.$PropertyName) {
+                            $technique = $value -replace "(T\d{4})\.\d{3}", '$1'
+                            if (-not($AnalyticsRuleCleaned[$KeyName].contains($technique))) {
+                                # Add subTechnique if the mainTechnique is not already present
+                                $AnalyticsRuleCleaned[$KeyName] += $value
+                            } else {
+                                # Replace mainTechnique with subTechnique
+                                $AnalyticsRuleCleaned[$KeyName][$AnalyticsRuleCleaned[$KeyName].indexOf($technique)] = $value
+                            }
+                        }
+                    }
+                    if ( -not $AnalyticsRuleCleaned.Contains($KeyName)) {
                         $AnalyticsRuleCleaned.Add($KeyName, $AnalyticsRule.$PropertyName)
                     }
                 }
