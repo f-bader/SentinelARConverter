@@ -15,6 +15,9 @@ param(
     [String]
     $scheduledBadGuidExampleFilePath = "./tests/examples/ScheduledBadGuid.json",
     [Parameter()]
+    [String]
+    $ttpWithTacticsNTechniques = "./tests/examples/TTPWithTacticsNTechniques.json",
+    [Parameter()]
     [Switch]
     $RetainTestFiles = $false
 )
@@ -150,6 +153,7 @@ Describe "Convert-SentinelARArmToYaml" {
             $convertedExampleFilePath | Should -Not -FileContentMatch 'LessThanOrEqual$'
         }
     }
+
     Context "Properly handles Force situations" -Tag Unit {
         BeforeEach {
             "this is not an ART" | Out-File -FilePath $convertedExampleFilePath -Force
@@ -561,6 +565,7 @@ Describe "Simple example tests" {
             Copy-Item -Path $exampleFilePath -Destination TestDrive:/Content/ -Force
             Copy-Item -Path $NRTexampleFilePath -Destination TestDrive:/Content/ -Force
             Copy-Item -Path $mixedMultipleExampleFilePath -Destination TestDrive:/Content/ -Force
+            Copy-Item -Path $ttpWithTacticsNTechniques -Destination TestDrive:/Content/ -Force
         }
         AfterEach {
             Remove-Item -Path "TestDrive:/Content/*" -Include *.yaml -Force
@@ -580,6 +585,11 @@ Describe "Simple example tests" {
             Get-ChildItem -Path "TestDrive:/Content/*" -Include *.yaml | Should -HaveCount 2
             'TestDrive:/Content/1baffb8f-9fc6-468e-aff6-91da707ec37d.yaml' | Should -FileContentMatch 'kind: Scheduled'
             'TestDrive:/Content/4a4364e4-bd26-46f6-a040-ab14860275f8.yaml' | Should -FileContentMatch 'kind: NRT'
+        }
+        It "Merged RelevantTechniques, SubTechniques and Techniques into single property" {
+            $converted = Convert-SentinelARArmToYaml -Filename "TestDrive:/Content/TTPWithTacticsNTechniques.json" | ConvertFrom-Yaml
+            $converted.subTechniques | Should -Be $null
+            $converted.Techniques -join ", " | Should -Be "T1078.004, T1078.005"
         }
     }
 }
