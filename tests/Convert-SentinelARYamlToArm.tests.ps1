@@ -318,7 +318,7 @@ Describe "Convert-SentinelARYamlToArm" {
     Context "Scheduled with TTP sub-techniques and invalid techniques using old API" -Tag Integration {
         BeforeAll {
             Copy-Item -Path $exampleScheduledTTPFilePath -Destination "TestDrive:/Scheduled.yaml" -Force
-            Convert-SentinelARYamlToArm -Filename "TestDrive:/Scheduled.yaml" -OutFile "TestDrive:/Scheduled.json"
+            Convert-SentinelARYamlToArm -Filename "TestDrive:/Scheduled.yaml" -OutFile "TestDrive:/Scheduled.json" -APIVersion "2023-10-01-preview"
             $armTemplate = Get-Content -Path "TestDrive:/Scheduled.json" -Raw | ConvertFrom-Json
             $YAMLSourceContent = Get-Content -Path "TestDrive:/Scheduled.yaml" -Raw | ConvertFrom-Yaml
         }
