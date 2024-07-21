@@ -1,0 +1,76 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "workspace": {
+      "type": "String"
+    }
+  },
+  "resources": [
+    {
+      "apiVersion": "2023-12-01-preview",
+      "id": "[concat(resourceId('Microsoft.OperationalInsights/workspaces/providers', parameters('workspace'), 'Microsoft.SecurityInsights'),'/alertRules/746ddb63-f51b-4563-b449-a8b13cf302ec')]",
+      "kind": "Scheduled",
+      "name": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/746ddb63-f51b-4563-b449-a8b13cf302ec')]",
+      "properties": {
+        "alertRuleTemplateName": "746ddb63-f51b-4563-b449-a8b13cf302ec",
+        "customDetails": null,
+        "description": "'Identifies when a new eligible or active privileged role is assigned to a user. Does not alert on PIM activations. Any account eligible for a role is now being given privileged access. If the assignment is unexpected or into a role that isn't the responsibility of the account holder, investigate.\nRef : https://docs.microsoft.com/azure/active-directory/fundamentals/security-operations-privileged-accounts#things-to-monitor-1'\n",
+        "displayName": "User Assigned New Privileged Role",
+        "enabled": true,
+        "entityMappings": [
+          {
+            "entityType": "Account",
+            "fieldMappings": [
+              {
+                "columnName": "TargetName",
+                "identifier": "Name"
+              },
+              {
+                "columnName": "TargetUPNSuffix",
+                "identifier": "UPNSuffix"
+              }
+            ]
+          },
+          {
+            "entityType": "Account",
+            "fieldMappings": [
+              {
+                "columnName": "InitiatorName",
+                "identifier": "Name"
+              },
+              {
+                "columnName": "InitiatorUPNSuffix",
+                "identifier": "UPNSuffix"
+              }
+            ]
+          }
+        ],
+        "query": "AuditLogs\n| where Category =~ \"RoleManagement\"\n| where AADOperationType in (\"Assign\", \"AssignEligibleRole\", \"CreateRequestGrantedRole\", \"CreateRequestPermanentEligibleRole\", \"CreateRequestPermanentGrantedRole\")\n| where ActivityDisplayName has_any (\"Add eligible member to role\", \"Add member to role\")\n| mv-apply TargetResourceSubject = TargetResources on \n  (\n      where TargetResourceSubject.type in~ (\"User\", \"ServicePrincipal\")\n      | extend Target = iff(TargetResourceSubject.type =~ \"ServicePrincipal\", tostring(TargetResourceSubject.displayName), tostring(TargetResourceSubject.userPrincipalName)),\n               subjectProps = TargetResourceSubject.modifiedProperties\n  )\n| mv-apply TargetResourceRole = TargetResources on \n  (\n    // mimic modifiedProperties so we can use the same logic to get the role name regardless of where it comes from\n    where TargetResourceRole.type in~ (\"Role\")\n    | extend roleProps = pack_array(bag_pack(\"displayName\",\"Role.DisplayName\", \"newValue\", TargetResourceRole.displayName))\n  )\n| mv-apply Property = iff(array_length(subjectProps) > 0, subjectProps, roleProps) on \n  ( \n    where Property.displayName =~ \"Role.DisplayName\"\n      | extend RoleName = trim('\"',tostring(Property.newValue))\n  )\n| where RoleName contains \"Admin\"\n| extend InitiatingApp = tostring(InitiatedBy.app.displayName)\n| extend Initiator = iif(isnotempty(InitiatingApp), InitiatingApp, tostring(InitiatedBy.user.userPrincipalName))\n// Comment below to alert for PIM activations\n| where Initiator != \"MS-PIM\"\n| summarize by bin(TimeGenerated, 1h), OperationName,  RoleName, Target, Initiator, Result\n| extend TargetName = tostring(split(Target,'@',0)[0]), TargetUPNSuffix = tostring(split(Target,'@',1)[0]), InitiatorName = tostring(split(Initiator,'@',0)[0]), InitiatorUPNSuffix = tostring(split(Initiator,'@',1)[0])\n",
+        "queryFrequency": "PT2H",
+        "queryPeriod": "PT2H",
+        "severity": "High",
+        "status": "Available",
+        "subTechniques": [
+          "T1078.004",
+          "T1078.005"
+        ],
+        "suppressionDuration": "PT1H",
+        "suppressionEnabled": false,
+        "tactics": [
+          "Persistence"
+        ],
+        "tags": [
+          "AADSecOpsGuide"
+        ],
+        "techniques": [
+          "T1078"
+        ],
+        "templateVersion": "1.0.0",
+        "triggerOperator": "GreaterThan",
+        "triggerThreshold": 0
+      },
+      "type": "Microsoft.OperationalInsights/workspaces/providers/alertRules"
+    }
+  ]
+}

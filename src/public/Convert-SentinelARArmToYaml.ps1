@@ -343,7 +343,26 @@ function Convert-SentinelARArmToYaml {
                     if ([string]::IsNullOrWhiteSpace($KeyName)) {
                         $KeyName = $PropertyName
                     }
-                    if ( -not $AnalyticsRuleCleaned.Contains($KeyName) ) {
+                    # Special case for subTechniques since we cannot add duplicate keys to $ValueNameMappingArm2Yaml
+                    # We must merge all techniques since (relevant)techniques could contain values not preset in subTechniques
+                    if ($PropertyName -like "*techniques") {
+                        foreach ($value in $AnalyticsRule.$PropertyName) {
+                            $KeyName = "techniques"
+                            $technique = $value -replace "(T\d{4})\.\d{3}", '$1'
+                            # Create an empty key
+                            if ( -not $AnalyticsRuleCleaned.Contains($KeyName) ) {
+                                $AnalyticsRuleCleaned.Add($KeyName, @())
+                            }
+                            # Add subTechnique if the mainTechnique is not already present
+                            if (-not($AnalyticsRuleCleaned[$KeyName].contains($technique))) {
+                                $AnalyticsRuleCleaned[$KeyName] += $value
+                                # Replace mainTechnique with subTechnique
+                            } else {
+                                $AnalyticsRuleCleaned[$KeyName][$AnalyticsRuleCleaned[$KeyName].indexOf($technique)] = $value
+                            }
+                        }
+                    }
+                    if ( -not $AnalyticsRuleCleaned.Contains($KeyName)) {
                         $AnalyticsRuleCleaned.Add($KeyName, $AnalyticsRule.$PropertyName)
                     }
                 }
