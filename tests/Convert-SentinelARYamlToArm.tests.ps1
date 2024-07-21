@@ -368,7 +368,7 @@ Describe "Convert-SentinelARYamlToArm" {
             $armTemplate.resources[0].properties.techniques | Should -Not -BeNullOrEmpty -Because "Source YAML file has techniques defined"
         }
 
-        It "Should have MITRE sub-techniques removed" {
+        It "Should have MITRE sub-techniques removed from techniques" {
             $armTemplate.resources[0].properties.techniques | Should -Be "T1078" -Because "Microsoft sub-techniques have their own property"
         }
 
