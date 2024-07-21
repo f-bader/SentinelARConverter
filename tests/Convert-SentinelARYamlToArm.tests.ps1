@@ -351,7 +351,7 @@ Describe "Convert-SentinelARYamlToArm" {
     }
 
     Context "Scheduled with TTP sub-techniques and invalid techniques supporting sub-techniques" -Tag Integration {
-        BeforeAll {
+        BeforeAll { T1078.003
             Copy-Item -Path $exampleScheduledTTPFilePath -Destination "TestDrive:/Scheduled.yaml" -Force
             Convert-SentinelARYamlToArm -Filename "TestDrive:/Scheduled.yaml" -OutFile "TestDrive:/Scheduled.json" -APIVersion "2023-12-01-preview"
             $armTemplate = Get-Content -Path "TestDrive:/Scheduled.json" -Raw | ConvertFrom-Json
@@ -373,7 +373,7 @@ Describe "Convert-SentinelARYamlToArm" {
         }
 
         It "Should have MITRE sub-techniques" {
-            $armTemplate.resources[0].properties.subTechniques -join ", " | Should -Be "T1078.004, T1078.005" -Because "Z1001.02 is not a valid sub-technique"
+            $armTemplate.resources[0].properties.subTechniques -join ", " | Should -Be "T1078.003, T1078.004" -Because "Z1001.02 is not a valid sub-technique"
         }
 
         It "Should not contain obviously invalid MITRE techniques" {
