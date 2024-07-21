@@ -350,7 +350,7 @@ function Convert-SentinelARArmToYaml {
                             $KeyName = "techniques"
                             $technique = $value -replace "(T\d{4})\.\d{3}", '$1'
                             # Create an empty key
-                            if (-not($AnalyticsRuleCleaned[$KeyName])) {
+                            if ( -not $AnalyticsRuleCleaned.Contains($KeyName) ) {
                                 $AnalyticsRuleCleaned.Add($KeyName, @())
                             }
                             # Add subTechnique if the mainTechnique is not already present
