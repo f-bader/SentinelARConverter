@@ -52,8 +52,8 @@
         "severity": "High",
         "status": "Available",
         "subTechniques": [
-          "T1078.004",
-          "T1078.005"
+          "T1078.003",
+          "T1078.004"
         ],
         "suppressionDuration": "PT1H",
         "suppressionEnabled": false,

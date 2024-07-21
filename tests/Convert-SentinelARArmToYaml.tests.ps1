@@ -589,7 +589,7 @@ Describe "Simple example tests" {
         It "Merged RelevantTechniques, SubTechniques and Techniques into single property" {
             $converted = Convert-SentinelARArmToYaml -Filename "TestDrive:/Content/TTPWithTacticsNTechniques.json" | ConvertFrom-Yaml
             $converted.subTechniques | Should -Be $null
-            $converted.Techniques -join ", " | Should -Be "T1078.004, T1078.005"
+            $converted.Techniques -join ", " | Should -Be "T1078.003, T1078.004"
         }
     }
 }
