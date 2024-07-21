@@ -364,7 +364,7 @@ Describe "Convert-SentinelARYamlToArm" {
             }
         }
 
-        It "Should not have empty MITRE sub-techniques" {
+        It "Should not have empty MITRE techniques" {
             $armTemplate.resources[0].properties.techniques | Should -Not -BeNullOrEmpty -Because "Source YAML file has techniques defined"
         }
 
