@@ -29,7 +29,7 @@ If set, the output file will be saved with the id of the Analytics Rule as filen
 The extension will be replaced with .json
 
 .PARAMETER APIVersion
-Set API version of the ARM template. Default is "2022-11-01-preview"
+Set API version of the ARM template. Default is "2024-01-01-preview"
 
 .PARAMETER NamePrefix
 Set prefix for the name of the ARM template. Default is none
@@ -94,7 +94,7 @@ function Convert-SentinelARYamlToArm {
 
         [ValidatePattern('^\d{4}-\d{2}-\d{2}(-preview)?$')]
         [Parameter()]
-        [string]$APIVersion = "2023-02-01-preview",
+        [string]$APIVersion = "2024-01-01-preview",
 
         [Parameter()]
         [string]$NamePrefix,
