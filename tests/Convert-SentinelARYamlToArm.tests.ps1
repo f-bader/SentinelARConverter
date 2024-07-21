@@ -333,8 +333,8 @@ Describe "Convert-SentinelARYamlToArm" {
             $armTemplate.resources[0].properties.techniques | Should -Not -BeNullOrEmpty -Because "Source YAML file has techniques defined"
         }
 
-        It "Should have MITRE sub-techniques removed" {
-            $armTemplate.resources[0].properties.techniques | Should -Be "T1078" -Because "Microsoft Sentinel does not support sub-techniques"
+        It "Should have MITRE sub-techniques removed from techniques" {
+            $armTemplate.resources[0].properties.techniques | Should -Be "T1078" -Because "Microsoft Sentinel does not support sub-techniques in techniques property"
         }
 
         It "Should not contain obviously invalid MITRE techniques" {
