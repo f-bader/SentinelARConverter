@@ -37,6 +37,12 @@ Set prefix for the name of the ARM template. Default is none
 .PARAMETER Severity
 Overwrite the severity of the provided YAML file with a custom one. Default is emtpy
 
+.PARAMETER IncludeRequiredDataConnectors
+If set, the requiredDataConnectors property of the ARM template will be set to the value from the YAML file. Default is not to include it.
+
+.PARAMETER OmitDataTypeExtension
+If set, the requiredDataConnectors property will not include the data connector type extension. (the stuff in the brackets) Default is to include it.
+
 .PARAMETER StartRunningAt
 Set the startTimeUtc property of the ARM template. Default is empty
 To successfully deploy the ARM template the startTimeUtc property must be set to a future date.
@@ -92,6 +98,13 @@ function Convert-SentinelARYamlToArm {
         [Parameter(ParameterSetName = 'UseIdAsFilename')]
         [switch]$UseIdAsFilename,
 
+        [Parameter(Mandatory = $false)]
+        [array]$SkipYamlValues = @(
+            "metadata",
+            "kind",
+            "requiredDataConnectors"
+        ),
+
         [ValidatePattern('^\d{4}-\d{2}-\d{2}(-preview)?$')]
         [Parameter()]
         [string]$APIVersion = "2024-01-01-preview",
@@ -110,7 +123,13 @@ function Convert-SentinelARYamlToArm {
         [datetime]$StartRunningAt,
 
         [Parameter()]
-        [switch]$DisableIncidentCreation
+        [switch]$DisableIncidentCreation,
+
+        [Parameter()]
+        [switch]$IncludeRequiredDataConnectors,
+
+        [Parameter()]
+        [switch]$OmitDataTypeExtension
     )
 
     begin {
@@ -244,6 +263,21 @@ function Convert-SentinelARYamlToArm {
             $analyticRule.severity = $Severity
         }
 
+        if ($OmitDataTypeExtension) {
+            # Remove data connector type extension from requiredDataConnectors and trim whitespace
+            forEach ($requiredDc in $analyticRule.requiredDataConnectors) {
+                
+                if ($requiredDc.dataTypes.Count -eq 1) {
+                    # ,@ makes sure it's an array
+                    $requiredDc.dataTypes = ,@(($requiredDc.dataTypes -replace '\s*\(.*\)', '').Trim())
+                } else {
+                    forEach ($i in 0..($requiredDc.dataTypes.Count - 1)) {
+                        $requiredDc.dataTypes[$i] = ($requiredDc.dataTypes[$i] -replace '\s*\(.*\)', '').Trim()
+                    }
+                }
+            }
+        }
+
         Write-Verbose "Convert Analytics Rule $($analyticRule.name) ($($analyticRule.id)) to ARM template"
 
         #region Set output filename to defined value if not specified by user
@@ -351,6 +385,11 @@ function Convert-SentinelARYamlToArm {
             if (  $KeyName -notin $ARMTemplate.Keys ) {
                 $ARMTemplate.Add($KeyName, $RequiredParameters[$KeyName])
             }
+        }
+
+        # Add requiredDataConnectors if specified
+        if ($IncludeRequiredDataConnectors -and $analyticRule.requiredDataConnectors) {
+            $ARMTemplate.Add("requiredDataConnectors", $analyticRule.requiredDataConnectors)
         }
 
         # Remove any subtechniques from the techniques array
