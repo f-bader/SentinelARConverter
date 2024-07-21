@@ -307,7 +307,7 @@ Describe "Convert-SentinelARYamlToArm" {
         }
 
         It "Should have the correct startRunningAt" {
-            ([datetime]$armTemplate.resources[0].properties.startTimeUtc).ToString("yyyy-MM-ddTHH:mm:ssZ") | Should -Be "2022-01-01T00:00:00Z"
+            ([datetime]$armTemplate.resources[0].properties.startTimeUtc).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ") | Should -Be "2022-01-01T00:00:00Z"
         }
 
         It "Should abort on invalid startRunningAt format" {
