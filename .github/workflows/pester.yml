@@ -27,13 +27,6 @@ jobs:
           Set-PSRepository PSGallery -InstallationPolicy Trusted
           Install-Module powershell-yaml, PSScriptAnalyzer -Force
 
-      - name: Install Windows PowerShell dependencies
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          Set-PSRepository PSGallery -InstallationPolicy Trusted
-          Install-Module powershell-yaml, PSScriptAnalyzer -Force
-
       - name: Run PSScriptAnalyzer
         shell: pwsh
         run: |
@@ -43,6 +36,8 @@ jobs:
         if: runner.os == 'Windows'
         shell: powershell
         run: |
+          # Reuse downloaded modules from pwsh
+          $env:PSModulePath += ";$HOME\Documents\PowerShell\Modules"
           $config = New-PesterConfiguration -Hashtable @{TestResult = @{Enabled = $true }; Run = @{Exit = $false }; Output = @{ Verbosity = 'Detailed' }}
           Invoke-Pester -Configuration $config
 
