@@ -174,6 +174,9 @@ This way the following KQL query will be converted...
 
 ## Changelog
 
+### 2.4.1
+ * FIX: Handle error if `incidentConfiguration` section is missing from source YAML in `Convert-SentinelARYamlToArm` when using `-DisableIncidentCreation`
+
 ### 2.4.0
  * FEATURE: Support for MITRE sub-Techniques and update default ARM version to `2024-01-01-preview`
    Thanks to [@Konverto-MartinGasser)](https://github.com/Konverto-MartinGasser) SentinelARConverter now supports MITRE sub-techniques which were introduced in ARM template version `2023-12-01-preview`.

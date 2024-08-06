@@ -18,6 +18,9 @@ param(
     [String]
     $exampleScheduledParameterFilePath = "./tests/examples/ScheduledParam.params.yaml",
     [Parameter()]
+    [String]
+    $exampleIncidentConfigurationMissingFilePath = "./tests/examples/IncidentConfigurationMissing.yaml",
+    [Parameter()]
     [Switch]
     $RetainTestFiles = $false
 )
@@ -436,6 +439,28 @@ Describe "Convert-SentinelARYamlToArm" {
 
         It "Should have the incident creation disabled" {
             $armTemplate.resources[0].properties.incidentConfiguration.createIncident | Should -Be $false
+        }
+    }
+
+    Context "Scheduled with disabled incident creation and incidentConfiguration container missing" {
+        BeforeAll {
+            Copy-Item -Path $exampleIncidentConfigurationMissingFilePath -Destination "TestDrive:/Scheduled.yaml" -Force
+            Convert-SentinelARYamlToArm -Filename "TestDrive:/Scheduled.yaml" -OutFile "TestDrive:/Scheduled.json" -DisableIncidentCreation
+            $armTemplate = Get-Content -Path "TestDrive:/Scheduled.json" -Raw | ConvertFrom-Json
+        }
+
+        AfterEach {
+            if ( -not $RetainTestFiles) {
+                Remove-Item -Path "TestDrive:/*" -Include *.json -Force
+            }
+        }
+
+        It "Should have the incident creation disabled" {
+            $armTemplate.resources[0].properties.incidentConfiguration.createIncident | Should -Be $false
+        }
+
+        It "Should not fail when incidentConfiguration is missing" {
+            { Convert-SentinelARYamlToArm -Filename "TestDrive:/Scheduled.yaml" -OutFile "TestDrive:/Scheduled.json" -DisableIncidentCreation } | Should -Not -Throw
         }
     }
 
