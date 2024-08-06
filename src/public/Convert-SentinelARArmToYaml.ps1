@@ -347,7 +347,7 @@ function Convert-SentinelARArmToYaml {
                     # We must merge all techniques since (relevant)techniques could contain values not preset in subTechniques
                     if ($PropertyName -like "*techniques") {
                         foreach ($value in $AnalyticsRule.$PropertyName) {
-                            $KeyName = "techniques"
+                            $KeyName = "relevantTechniques"
                             $technique = $value -replace "(T\d{4})\.\d{3}", '$1'
                             # Create an empty key
                             if ( -not $AnalyticsRuleCleaned.Contains($KeyName) ) {
