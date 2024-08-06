@@ -400,6 +400,10 @@ function Convert-SentinelARYamlToArm {
             if ("createIncident" -in $ARMTemplate.incidentConfiguration.Keys) {
                 $ARMTemplate.incidentConfiguration.Remove("createIncident")
             }
+            # Check if incidentConfiguration container is present and if not create it
+            if (-not $ARMTemplate.incidentConfiguration) {
+                $ARMTemplate.Add("incidentConfiguration", [ordered]@{})
+            }
             $ARMTemplate.incidentConfiguration.Add("createIncident", $false)
         }
 
