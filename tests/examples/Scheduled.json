@@ -1,4 +1,3 @@
-
 {
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
@@ -30,7 +29,9 @@
                 "tactics": [
                     "InitialAccess"
                 ],
-                "techniques": [],
+                "techniques": [
+                    "T1078"
+                ],
                 "alertRuleTemplateName": "2de8abd6-a613-450e-95ed-08e503369fb3",
                 "incidentConfiguration": {
                     "createIncident": true,
