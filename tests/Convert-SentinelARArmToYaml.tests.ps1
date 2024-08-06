@@ -133,8 +133,7 @@ Describe "Convert-SentinelARArmToYaml" {
         }
 
         BeforeEach {
-            $ARMTemplateContent = Get-Content -Path "TestDrive:/$ExampleFileName" -Raw
-            $ARMTemplateContent | Convert-SentinelARArmToYaml -OutFile $convertedExampleFilePath
+            Convert-SentinelARArmToYaml -Filename "TestDrive:/$ExampleFileName" -OutFile $convertedExampleFilePath
         }
 
         It "Properly converts the propertynames" {
@@ -589,7 +588,7 @@ Describe "Simple example tests" {
         It "Merged RelevantTechniques, SubTechniques and Techniques into single property" {
             $converted = Convert-SentinelARArmToYaml -Filename "TestDrive:/Content/TTPWithTacticsNTechniques.json" | ConvertFrom-Yaml
             $converted.subTechniques | Should -Be $null
-            $converted.Techniques -join ", " | Should -Be "T1078.003, T1078.004"
+            $converted.RelevantTechniques -join ", " | Should -Be "T1078.003, T1078.004"
         }
     }
 }

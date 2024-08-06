@@ -174,6 +174,9 @@ This way the following KQL query will be converted...
 
 ## Changelog
 
+### 2.4.2
+ * FIX: Arm to YAML used `techniques` instead of `relevantTechniques`
+
 ### 2.4.1
  * FIX: Handle error if `incidentConfiguration` section is missing from source YAML in `Convert-SentinelARYamlToArm` when using `-DisableIncidentCreation`
 
