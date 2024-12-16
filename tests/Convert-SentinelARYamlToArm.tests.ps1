@@ -209,7 +209,7 @@ Describe "Convert-SentinelARYamlToArm" {
 
 
             It "Should have the correct display name" {
-                $armTemplate.resources[0].properties.displayName | Should -Be $YAMLSourceContent.Name
+                $armTemplate.resources[0].properties.displayName | Should -Be $YAMLSourceContent.name
             }
 
             It "Should have the correct description" {
