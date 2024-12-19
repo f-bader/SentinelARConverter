@@ -144,6 +144,11 @@ function Convert-SentinelARYamlToArm {
 
     end {
 
+        $PowerShellYAMLModuleVersion = Get-Module -Name powershell-yaml | Select-Object -ExpandProperty Version
+        if ( $PowerShellYAMLModuleVersion -ge [version]"0.4.8" -and $PowerShellYAMLModuleVersion -le [version]"0.4.9" ) {
+            Write-Warning "The powershell-yaml module version $($PowerShellYAMLModuleVersion) has known issues. Please update to the latest version of the module."
+        }
+
         try {
             # Use parsed pipeline data if no file was specified (default)
             if ($PsCmdlet.ParameterSetName -eq "Pipeline") {

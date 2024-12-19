@@ -136,6 +136,11 @@ function Convert-SentinelARArmToYaml {
 
         #region common
 
+        $PowerShellYAMLModuleVersion = Get-Module -Name powershell-yaml | Select-Object -ExpandProperty Version
+        if ( $PowerShellYAMLModuleVersion -ge [version]"0.4.8" -and $PowerShellYAMLModuleVersion -le [version]"0.4.9" ) {
+            Write-Warning "The powershell-yaml module version $($PowerShellYAMLModuleVersion) has known issues. Please update to the latest version of the module."
+        }
+
         if ($PsCmdlet.ParameterSetName -ne "Pipeline" ) {
             try {
                 if (-not (Test-Path $Filename)) {
@@ -368,6 +373,10 @@ function Convert-SentinelARArmToYaml {
                 }
             }
 
+            # Bugfix for broken powershell-yaml - https://github.com/cloudbase/powershell-yaml/issues/177
+            if ( $PowerShellYAMLModuleVersion -ge [version]"0.4.8" -and $PowerShellYAMLModuleVersion -le [version]"0.4.10" ) {
+                $AnalyticsRuleCleaned = $AnalyticsRuleCleaned | ConvertTo-Json -Depth 99 | ConvertFrom-Json
+            }
             # Convert the PowerShell object to YAML
             $AnalyticsRuleYAML = $AnalyticsRuleCleaned | ConvertTo-Yaml
 

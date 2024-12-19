@@ -4,6 +4,11 @@
 
 [![PSGallery Version](https://img.shields.io/powershellgallery/v/SentinelARConverter.svg?style=flat&logo=powershell&label=PSGallery%20Version)](https://www.powershellgallery.com/packages/SentinelARConverter) [![PSGallery Downloads](https://img.shields.io/powershellgallery/dt/SentinelARConverter.svg?style=flat&logo=powershell&label=PSGallery%20Downloads)](https://www.powershellgallery.com/packages/SentinelARConverter)
 
+> [!WARNING]  
+> The [powershell-yaml](https://github.com/cloudbase/powershell-yaml) module which is used by the Sentinel Analytics Rule converter had some breaking changes starting in version 0.4.8.
+> It is recommended to update to at least v0.4.11 of powershell-yaml or to update to the latest SentinelARConverter (>=2.4.3) which contains workarounds for known bugs.
+> Avoid using powershell-yaml in the version 0.4.8 and 0.4.9 as there are other bugs.
+
 ## Installation
 
 ```PowerShell
