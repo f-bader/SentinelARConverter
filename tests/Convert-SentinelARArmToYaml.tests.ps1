@@ -590,6 +590,14 @@ Describe "Simple example tests" {
             $converted.subTechniques | Should -Be $null
             $converted.relevantTechniques -join ", " | Should -Be "T1078.003, T1078.004"
         }
+        It "Converts eventGroupingSettings correctly" {
+            $converted = Convert-SentinelARArmToYaml -Filename "TestDrive:/Content/Scheduled.json" | ConvertFrom-Yaml
+            $converted.eventGroupingSettings.aggregationKind | Should -Be "SingleAlert"
+        }
+        It "Converts incidentConfiguration correctly" {
+            $converted = Convert-SentinelARArmToYaml -Filename "TestDrive:/Content/Scheduled.json" | ConvertFrom-Yaml
+            $converted.incidentConfiguration.createIncident | Should -Be $true
+        }
     }
 }
 
