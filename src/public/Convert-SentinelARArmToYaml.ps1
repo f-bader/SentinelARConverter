@@ -369,7 +369,10 @@ function Convert-SentinelARArmToYaml {
             }
 
             # Bugfix for broken powershell-yaml - https://github.com/cloudbase/powershell-yaml/issues/177
-            $AnalyticsRuleCleaned = $AnalyticsRuleCleaned | ConvertTo-Json -Depth 99 | ConvertFrom-Json
+            $PowerShellYAMLModuleVersion = Get-Module -Name powershell-yaml | Select-Object -ExpandProperty Version
+            if ( $PowerShellYAMLModuleVersion -ge [version]"0.4.8" -and $PowerShellYAMLModuleVersion -le [version]"0.4.10" ) {
+                $AnalyticsRuleCleaned = $AnalyticsRuleCleaned | ConvertTo-Json -Depth 99 | ConvertFrom-Json
+            }
             # Convert the PowerShell object to YAML
             $AnalyticsRuleYAML = $AnalyticsRuleCleaned | ConvertTo-Yaml
 
