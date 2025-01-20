@@ -179,6 +179,12 @@ This way the following KQL query will be converted...
 
 ## Changelog
 
+### 2.4.4
+ * FIX: Duplicated MITRE subTechniques in rare cases
+
+### 2.4.3
+ * FIX: Fix upstream issues with [powershell-yaml](https://github.com/cloudbase/powershell-yaml)
+
 ### 2.4.2
  * FIX: Arm to YAML used `techniques` instead of `relevantTechniques`
 
