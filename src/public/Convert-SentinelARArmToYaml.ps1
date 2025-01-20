@@ -358,11 +358,14 @@ function Convert-SentinelARArmToYaml {
                             if ( -not $AnalyticsRuleCleaned.Contains($KeyName) ) {
                                 $AnalyticsRuleCleaned.Add($KeyName, @())
                             }
-                            # Add subTechnique if the mainTechnique is not already present
-                            if (-not($AnalyticsRuleCleaned[$KeyName].contains($technique))) {
+                            
+                            if ( $AnalyticsRuleCleaned[$KeyName].contains($value) ) {
+                                # Do nothing if subTechnique is already present
+                            } elseif (-not($AnalyticsRuleCleaned[$KeyName].contains($technique))) {
+                                # Add subTechnique if the mainTechnique is not already present
                                 $AnalyticsRuleCleaned[$KeyName] += $value
-                                # Replace mainTechnique with subTechnique
                             } else {
+                                # Replace mainTechnique with subTechnique
                                 $AnalyticsRuleCleaned[$KeyName][$AnalyticsRuleCleaned[$KeyName].indexOf($technique)] = $value
                             }
                         }
