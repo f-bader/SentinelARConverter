@@ -417,6 +417,8 @@ function Convert-SentinelARYamlToArm {
         # Use ISO8601 format for timespan values
         $JSON = $JSON -replace '"([0-9]+)m"', '"PT$1M"' -replace '"([0-9]+)h"', '"PT$1H"' -replace '"([0-9]+)d"', '"P$1D"'
 
+        $JSON = $JSON -replace '\\\\\\\"', '\"'
+
         if ($analyticRule.kind -eq "Scheduled") {
             $ScheduleKind = "Scheduled"
         } elseif ($analyticRule.kind -eq "Nrt") {
