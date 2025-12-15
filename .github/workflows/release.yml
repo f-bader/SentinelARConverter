@@ -43,6 +43,12 @@ jobs:
               Add-Content -Path $env:GITHUB_OUTPUT -Value "tag=$CurrentVersion"
           }
 
+      - name: Install PowerShell module dependencies
+        id: install-dependencies
+        shell: pwsh
+        run: |
+          Install-Module -Name powershell-yaml -Scope CurrentUser -Force -AllowClobber
+
       - name: Sign PowerShell module
         id: module-signing
         shell: pwsh
