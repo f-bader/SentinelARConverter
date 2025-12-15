@@ -1,28 +1,81 @@
-name: release
+name: Create PowerShell module release artifacts and publish them to GitHub and PowerShell Gallery
 
 on:
   workflow_dispatch:
 
 jobs:
-  release:
-    runs-on: windows-2022
+  CreateRelease:
+    runs-on: windows-latest
+    permissions:
+      id-token: write
+      contents: write
 
     steps:
-      - uses: actions/checkout@v4
-        with:  
-          fetch-depth: 0
+      - name: Azure CLI login
+        uses: azure/login@v1
+        with:
+          tenant-id: ${{ vars.TENTANT_ID }}
+          client-id: ${{ vars.CLIENT_ID }}
+          allow-no-subscriptions: true
 
-      - name: Sign and publish
-        env:
-          NUGET_KEY: ${{ secrets.PS_GALLERY_KEY }}
-          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
-          SIGNING_CERTIFICATE: ${{ secrets.SIGNING_CERTIFICATE }}
+      - name: Azure CLI get token
+        run: |
+          $kv_token=$(az account get-access-token --scope https://vault.azure.net/.default --query accessToken --output tsv)
+          echo "::add-mask::$kv_token"
+          echo "CODE_SIGN_AKV_ACCESS_TOKEN=$kv_token" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - uses: actions/checkout@v5
+
+      - name: Install AzureSignTool
+        run: dotnet tool install --no-cache --global AzureSignTool
+
+      - name: Get PowerShell module version
+        id: moduleversion
         shell: pwsh
         run: |
-          Install-Module -Force -Name 'powershell-yaml'
-          $certPath = Join-Path -Path $PSScriptRoot -ChildPath "code_signing.pfx"
-          Set-Content -Value $([System.Convert]::FromBase64String($env:SIGNING_CERTIFICATE)) -Path $certPath -AsByteStream
-          $cert = Import-PfxCertificate -FilePath $certPath -Password ($env:SIGNING_PASSWORD | ConvertTo-SecureString -AsPlainText -Force) -CertStoreLocation Cert:\CurrentUser\My
-          Get-ChildItem src -Recurse -Force -Filter *.ps* | Set-AuthenticodeSignature -Certificate $cert -TimestampServer 'http://timestamp.digicert.com'
-          Copy-Item .\src\ -Recurse -Destination .\SentinelARConverter\ -Force
-          Publish-Module -Path .\SentinelARConverter\ -NuGetApiKey $env:NUGET_KEY
+          $ModuleRoot = "$($env:GITHUB_WORKSPACE)/src"
+          $ManifestPath = "$($ModuleRoot)/SentinelARConverter.psd1"
+          if ( -not (Test-Path $ManifestPath )) {
+              Write-Error "Could not find PowerShell module manifest ($ManifestPath)"
+              throw
+          } else {
+              $CurrentVersion = Import-PowerShellDataFile $ManifestPath | Select-Object -ExpandProperty ModuleVersion
+              Add-Content -Path $env:GITHUB_OUTPUT -Value "tag=$CurrentVersion"
+          }
+
+      - name: Sign PowerShell module
+        id: module-signing
+        shell: pwsh
+        run: |
+          Get-ChildItem ${{ github.workspace }}/src -Recurse -Force -Filter *.ps* | Select-Object -ExpandProperty FullName | Out-File -FilePath ./signfiles.txt
+          azuresigntool.exe sign --verbose `
+            --azure-key-vault-url "${{ secrets.CODE_SIGN_KEYVAULT }}" `
+            --azure-key-vault-accesstoken ${{ env.CODE_SIGN_AKV_ACCESS_TOKEN }} `
+            --azure-key-vault-certificate "${{ vars.CODE_SIGN_CERTIFICATENAME }}" `
+            --timestamp-rfc3161 "http://timestamp.digicert.com" `
+            --input-file-list ./signfiles.txt
+          Copy-Item ${{ github.workspace }}/src -Recurse -Destination ${{ github.workspace }}/SentinelARConverter/ -Force
+
+      - name: Update PowerShell Module to PowerShell Gallery
+        id: publish-to-gallery
+        shell: pwsh
+        run: |
+          Publish-Module -Path ${{ github.workspace }}/SentinelARConverter -NuGetApiKey ${{ secrets.PS_GALLERY_KEY }}
+
+      - name: Build PowerShell module for GitHub
+        id: module-creation
+        shell: pwsh
+        run: |
+          Compress-Archive -Path ${{ github.workspace }}/SentinelARConverter/* -DestinationPath ${{ github.workspace }}/SentinelARConverter.zip
+
+      - name: Create release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "SentinelARConverter.zip"
+          replacesArtifacts: true
+          allowUpdates: true
+          generateReleaseNotes: true
+          makeLatest: legacy
+          prerelease: false
+          tag: ${{ steps.moduleversion.outputs.tag }}
+          commit: ${{ github.sha }}
