@@ -219,15 +219,19 @@ function Convert-SentinelARYamlToArm {
                     }
                     Write-Verbose "Replacing variable %%$Key%% with $($ReplaceValue)"
                     # Replace both %%VAR%% and %%VAR:default%% patterns
-                    $analyticRule.query = $analyticRule.query -replace "%%$([regex]::Escape($Key))(?::[^%]*)?%%", $ReplaceValue
+                    # Using non-greedy match and negative lookahead to properly handle default values that may contain % characters
+                    $analyticRule.query = $analyticRule.query -replace "%%$([regex]::Escape($Key))(?::((?:(?!%%).)*?))?%%", $ReplaceValue
                 }
             } else {
                 Write-Verbose "No variables to replace in provided parameters file"
             }
             
             # Replace remaining variables with their default values
-            # Pattern matches %%VARNAME:DefaultValue%% where DefaultValue is captured
-            $analyticRule.query = [regex]::Replace($analyticRule.query, '%%([^%:]+):([^%]*)%%', '$2')
+            # Pattern matches %%VARNAME:DefaultValue%% where:
+            # - VARNAME cannot contain % or : characters (to avoid ambiguity)
+            # - DefaultValue is captured and can contain any characters except the closing %% delimiter
+            # - Uses negative lookahead (?!%%) to correctly handle % characters within default values
+            $analyticRule.query = [regex]::Replace($analyticRule.query, '%%([^%:]+?):((?:(?!%%).)*?)%%', '$2')
             
             # Replace remaining variables without defaults with empty string
             $analyticRule.query = $analyticRule.query -replace "%%[^%]+%%", ""

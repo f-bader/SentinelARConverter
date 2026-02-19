@@ -148,6 +148,8 @@ This section allows you to use variable names in your original YAML file. They w
 
 All variables must be named using two percent sign at the beginning and the end e.g. `%%VARIABLENAME%%`.
 
+**Note:** Variable names cannot contain `:` (colon) or `%` (percent) characters to avoid syntax ambiguity.
+
 #### Variable Syntax
 
 Variables support an optional default value using the syntax `%%VARIABLENAME:DefaultValue%%`:
@@ -161,6 +163,7 @@ Variables support an optional default value using the syntax `%%VARIABLENAME:Def
 * Array values are joined together using `","` and a single `"` is added at the start and end. The resulting string is used to replace the variable.
 * If a variable is defined in the parameter file, it always takes precedence over the default value.
 * If a variable is not defined in the parameter file and has no default value, it is replaced with an empty string.
+* Default values can contain `%` characters, but variable names cannot.
 
 #### Example
 
