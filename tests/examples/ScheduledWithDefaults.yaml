@@ -1,0 +1,25 @@
+id: test-defaults-12345
+name: Test Rule with Default Values
+description: |
+  'Test rule to verify default value functionality for variables'
+severity: Medium
+requiredDataConnectors: []
+queryFrequency: 1d
+queryPeriod: 1d
+triggerOperator: gt
+triggerThreshold: 0
+tactics:
+  - InitialAccess
+query: |
+  CommonSecurityLog
+  | where ErrorCount > %%ErrorThreshold:100%%
+  | where ErrorCode in (%%ErrorCodes:500%%)
+  | where Message contains "%%MessageFilter%%"
+  | where Source == "%%Source:DefaultSource%%"
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: HostName
+version: 1.0.0
+kind: Scheduled

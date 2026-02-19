@@ -499,6 +499,65 @@ Describe "Convert-SentinelARYamlToArm" {
         }
     }
 
+    Context "Scheduled with default values for variables" {
+        BeforeAll {
+            $exampleScheduledWithDefaultsFilePath = "./tests/examples/ScheduledWithDefaults.yaml"
+            $exampleScheduledWithDefaultsParameterFilePath = "./tests/examples/ScheduledWithDefaults.params.yaml"
+        }
+
+        Context "When no parameter file is provided" {
+            BeforeAll {
+                Copy-Item -Path $exampleScheduledWithDefaultsFilePath -Destination "TestDrive:/ScheduledWithDefaults.yaml" -Force
+                Convert-SentinelARYamlToArm -Filename "TestDrive:/ScheduledWithDefaults.yaml" -OutFile "TestDrive:/ScheduledWithDefaults.json"
+                $armTemplate = Get-Content -Path "TestDrive:/ScheduledWithDefaults.json" -Raw | ConvertFrom-Json
+            }
+
+            AfterEach {
+                if ( -not $RetainTestFiles) {
+                    Remove-Item -Path "TestDrive:/*" -Include *.json -Force
+                }
+            }
+
+            It "Should replace variables with default values" {
+                $armTemplate.resources.properties.query | Should -Match 'ErrorCount > 100'
+                $armTemplate.resources.properties.query | Should -Match 'ErrorCode in \(500\)'
+                $armTemplate.resources.properties.query | Should -Match 'Source == "DefaultSource"'
+            }
+
+            It "Should replace variables without defaults with empty string" {
+                $armTemplate.resources.properties.query | Should -Match 'Message contains ""'
+            }
+        }
+
+        Context "When parameter file is provided" {
+            BeforeAll {
+                Copy-Item -Path $exampleScheduledWithDefaultsFilePath -Destination "TestDrive:/ScheduledWithDefaults.yaml" -Force
+                Copy-Item -Path $exampleScheduledWithDefaultsParameterFilePath -Destination "TestDrive:/ScheduledWithDefaults.params.yaml" -Force
+                Convert-SentinelARYamlToArm -Filename "TestDrive:/ScheduledWithDefaults.yaml" -OutFile "TestDrive:/ScheduledWithDefaults.json" -ParameterFile "TestDrive:/ScheduledWithDefaults.params.yaml"
+                $armTemplate = Get-Content -Path "TestDrive:/ScheduledWithDefaults.json" -Raw | ConvertFrom-Json
+            }
+
+            AfterEach {
+                if ( -not $RetainTestFiles) {
+                    Remove-Item -Path "TestDrive:/*" -Include *.json -Force
+                }
+            }
+
+            It "Should replace variables from parameter file" {
+                $armTemplate.resources.properties.query | Should -Match 'ErrorCount > 50'
+                $armTemplate.resources.properties.query | Should -Match 'ErrorCode in \("403","404"\)'
+            }
+
+            It "Should use default values for variables not in parameter file" {
+                $armTemplate.resources.properties.query | Should -Match 'Source == "DefaultSource"'
+            }
+
+            It "Should replace variables without defaults with empty string" {
+                $armTemplate.resources.properties.query | Should -Match 'Message contains ""'
+            }
+        }
+    }
+
     AfterAll {
         Remove-Module SentinelARConverter -Force
     }

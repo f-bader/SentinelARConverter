@@ -1,0 +1,5 @@
+ReplaceQueryVariables:
+  ErrorThreshold: 50
+  ErrorCodes:
+    - 403
+    - 404

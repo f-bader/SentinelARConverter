@@ -218,11 +218,19 @@ function Convert-SentinelARYamlToArm {
                         $ReplaceValue = $Parameters.ReplaceQueryVariables[$Key]
                     }
                     Write-Verbose "Replacing variable %%$Key%% with $($ReplaceValue)"
-                    $analyticRule.query = $analyticRule.query -replace "%%$($Key)%%", $ReplaceValue
+                    # Replace both %%VAR%% and %%VAR:default%% patterns
+                    $analyticRule.query = $analyticRule.query -replace "%%$([regex]::Escape($Key))(?::[^%]*)?%%", $ReplaceValue
                 }
             } else {
                 Write-Verbose "No variables to replace in provided parameters file"
             }
+            
+            # Replace remaining variables with their default values
+            # Pattern matches %%VARNAME:DefaultValue%% where DefaultValue is captured
+            $analyticRule.query = [regex]::Replace($analyticRule.query, '%%([^%:]+):([^%]*)%%', '$2')
+            
+            # Replace remaining variables without defaults with empty string
+            $analyticRule.query = $analyticRule.query -replace "%%[^%]+%%", ""
             #endregion Replace variables in KQL query with data from parameters file
 
             Write-Verbose "$($analyticRule | ConvertTo-Json -Depth 99)"
