@@ -219,7 +219,10 @@ function Convert-SentinelARYamlToArm {
                     }
                     Write-Verbose "Replacing variable %%$Key%% with $($ReplaceValue)"
                     # Replace both %%VAR%% and %%VAR:default%% patterns
-                    # Using non-greedy match and negative lookahead to properly handle default values that may contain % characters
+                    # Regex breakdown: %%{VAR}(?::{default})?%%
+                    #   (?::((?:(?!%%).)*?))? - Optional non-capturing group for :default
+                    #     ((?:(?!%%).)*?) - Capture default value (can contain % but stops at %%)
+                    #       (?:(?!%%).)* - Match any char except the %% sequence (negative lookahead)
                     $analyticRule.query = $analyticRule.query -replace "%%$([regex]::Escape($Key))(?::((?:(?!%%).)*?))?%%", $ReplaceValue
                 }
             } else {
@@ -227,10 +230,15 @@ function Convert-SentinelARYamlToArm {
             }
             
             # Replace remaining variables with their default values
-            # Pattern matches %%VARNAME:DefaultValue%% where:
-            # - VARNAME cannot contain % or : characters (to avoid ambiguity)
-            # - DefaultValue is captured and can contain any characters except the closing %% delimiter
-            # - Uses negative lookahead (?!%%) to correctly handle % characters within default values
+            # Regex pattern: %%([^%:]+?):((?:(?!%%).)*?)%%
+            # Breakdown:
+            #   %% - Opening delimiter
+            #   ([^%:]+?) - Capture group 1: Variable name (no % or : chars, non-greedy)
+            #   : - Separator between variable name and default value
+            #   ((?:(?!%%).)*?) - Capture group 2: Default value (stops at %%, can contain single %)
+            #     (?:(?!%%).)* - Match any character except the %% sequence using negative lookahead
+            #   %% - Closing delimiter
+            # Replacement: $2 (use the captured default value)
             $analyticRule.query = [regex]::Replace($analyticRule.query, '%%([^%:]+?):((?:(?!%%).)*?)%%', '$2')
             
             # Replace remaining variables without defaults with empty string
