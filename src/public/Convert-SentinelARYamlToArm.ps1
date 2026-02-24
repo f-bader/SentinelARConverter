@@ -229,25 +229,30 @@ function Convert-SentinelARYamlToArm {
                 Write-Verbose "No variables to replace in provided parameters file"
             }
             
-            # Replace remaining variables with their default values
-            # Regex pattern: %%([^%:]+?):((?:(?!%%).)*?)%%
-            # Breakdown:
-            #   %% - Opening delimiter
-            #   ([^%:]+?) - Capture group 1: Variable name (no % or : chars, non-greedy)
-            #   : - Separator between variable name and default value
-            #   ((?:(?!%%).)*?) - Capture group 2: Default value (stops at %%, can contain single %)
-            #     (?:(?!%%).)* - Match any character except the %% sequence using negative lookahead
-            #   %% - Closing delimiter
-            # Replacement: $2 (use the captured default value)
-            $analyticRule.query = [regex]::Replace($analyticRule.query, '%%([^%:]+?):((?:(?!%%).)*?)%%', '$2')
-            
-            # Replace remaining variables without defaults with empty string
-            $analyticRule.query = $analyticRule.query -replace "%%[^%]+%%", ""
             #endregion Replace variables in KQL query with data from parameters file
 
             Write-Verbose "$($analyticRule | ConvertTo-Json -Depth 99)"
         }
         #endregion Parameter file handling
+
+        # Replace remaining variables with their default values
+        # Regex pattern: %%([^%:]+?):((?:(?!%%).)*?)%%
+        # Breakdown:
+        #   %% - Opening delimiter
+        #   ([^%:]+?) - Capture group 1: Variable name (no % or : chars, non-greedy)
+        #   : - Separator between variable name and default value
+        #   ((?:(?!%%).)*?) - Capture group 2: Default value (stops at %%, can contain single %)
+        #     (?:(?!%%).)* - Match any character except the %% sequence using negative lookahead
+        #   %% - Closing delimiter
+        # Replacement: $2 (use the captured default value)
+        $analyticRule.query = [regex]::Replace($analyticRule.query, '%%([^%:]+?):((?:(?!%%).)*?)%%', '$2')
+        
+        # Warn about and replace remaining variables without defaults with empty string
+        $remainingVariables = [regex]::Matches($analyticRule.query, '%%([^%:]+?)%%')
+        foreach ($match in $remainingVariables) {
+            Write-Warning "Variable '$($match.Groups[1].Value)' has no default value and no parameter file was provided. Replacing with empty string."
+        }
+        $analyticRule.query = $analyticRule.query -replace "%%[^%]+%%", ""
 
         if ( [string]::IsNullOrWhiteSpace($analyticRule.name) -or [string]::IsNullOrWhiteSpace($analyticRule.id) ) {
             throw "Analytics Rule name or id is empty. YAML might be corrupted"
