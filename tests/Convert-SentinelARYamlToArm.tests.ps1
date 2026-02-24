@@ -527,6 +527,12 @@ Describe "Convert-SentinelARYamlToArm" {
             It "Should replace variables without defaults with empty string" {
                 $armTemplate.resources.properties.query | Should -Match 'Message contains ""'
             }
+
+            It "Should emit a warning for variables without default values" {
+                $result = Convert-SentinelARYamlToArm -Filename "TestDrive:/ScheduledWithDefaults.yaml" -OutFile "TestDrive:/ScheduledWithDefaults.json" 3>&1
+                $warnings = $result | Where-Object { $_ -is [System.Management.Automation.WarningRecord] }
+                $warnings.Message | Should -Contain "Variable 'MessageFilter' has no default value and no parameter file was provided. Replacing with empty string."
+            }
         }
 
         Context "When parameter file is provided" {
