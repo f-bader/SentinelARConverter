@@ -1,0 +1,41 @@
+id: 6bb8e22c-4a5f-4d27-8a26-b60a7952d5af
+name: Azure WAF matching for Log4j vuln(CVE-2021-44228)
+kind: Scheduled
+description: |-
+  This query will alert on a positive pattern match by Azure WAF for CVE-2021-44228 log4j vulnerability exploitation attempt. If possible, it then decodes the malicious command for further analysis.
+   Refrence: https://www.microsoft.com/security/blog/2021/12/11/guidance-for-preventing-detecting-and-hunting-for-cve-2021-44228-log4j-2-exploitation/
+severity: High
+queryFrequency: 6h
+queryPeriod: 6h
+triggerOperator: gt
+triggerThreshold: 0
+tactics:
+  - InitialAccess
+query: "AzureDiagnostics\n| where ResourceProvider == \"MICROSOFT.NETWORK\" and Category in (\"ApplicationGatewayFirewallLog\", \"FrontdoorWebApplicationFirewallLog\")\n| extend details_data_s = column_ifexists(\"details_data_s\", tostring(AdditionalFields.details_data))\n| where details_data_s has \"jndi:\"\n| parse details_data_s with * '${' MaliciousCommand '} ' *\n| extend EncodeCmd = iff(MaliciousCommand has 'Base64/', split(split(MaliciousCommand, \"Base64/\",1)[0], \"}\", 0)[0], \"\")\n| extend EncodeCmd1 = iff(MaliciousCommand has 'base64/', split(split(MaliciousCommand, \"base64/\",1)[0], \"}\", 0)[0], \"\")\n| extend CmdLine = iff( isnotempty(EncodeCmd), EncodeCmd, EncodeCmd1)\n| extend DecodedCmdLine = base64_decode_tostring(tostring(CmdLine))\n| extend DecodedCmdLine = iff( isnotempty(DecodedCmdLine), DecodedCmdLine, \"Unable to decode/Doesn't need decoding\")\n| project TimeGenerated, Target=column_ifexists(\"hostname_s\", tostring(AdditionalFields.hostname)), MaliciousHost = column_ifexists(\"clientIp_s\", tostring(AdditionalFields.clientIp)) , MaliciousCommand, details_data_s = column_ifexists(\"details_data_s\", tostring(AdditionalFields.details_data)), DecodedCmdLine, Message,\nruleSetType_s = column_ifexists(\"ruleSetType_s\", tostring(AdditionalFields.ruleSetType)), OperationName, SubscriptionId, details_message_s = column_ifexists(\"details_message_s\", tostring(AdditionalFields.details_message)), \ndetails_file_s = column_ifexists(\"details_message_s\", tostring(AdditionalFields.details_file))\n| extend IPCustomEntity = MaliciousHost, timestamp = TimeGenerated"
+suppressionEnabled: false
+incidentConfiguration:
+  createIncident: true
+  groupingConfiguration:
+    enabled: false
+    reopenClosedIncident: false
+    lookbackDuration: 5h
+    matchingMethod: AllEntities
+    groupByEntities:
+      - Account
+      - IP
+      - Host
+      - URL
+      - FileHash
+    groupByAlertDetails:
+    groupByCustomDetails:
+eventGroupingSettings:
+  aggregationKind: SingleAlert
+alertDetailsOverride:
+  alertDisplayNameFormat: "WAF Alert - {{MaliciousCommand}}"
+  alertDescriptionFormat: "A WAF rule was triggered by {{MaliciousHost}}"
+entityMappings:
+  - entityType: IP
+    fieldMappings:
+      - identifier: Address
+        columnName: IPCustomEntity
+suppressionDuration: 1h

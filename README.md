@@ -234,6 +234,7 @@ Notice that:
 ### 2.5.0
  * FEATURE: Add support for default values in variable replacement syntax `%%VARIABLENAME:DefaultValue%%`
  * FEATURE: Warn about variables without default values and no parameter file provided
+ * FEATURE: Use `NamePrefix` parameter to also prefix `alertDisplayNameFormat` in `alertDetailsOverride` if present
 
 ### 2.4.4
  * FIX: Duplicated MITRE subTechniques in rare cases
