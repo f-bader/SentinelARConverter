@@ -231,8 +231,9 @@ Notice that:
 
 ## Changelog
 
-### Unreleased
+### 2.5.0
  * FEATURE: Add support for default values in variable replacement syntax `%%VARIABLENAME:DefaultValue%%`
+ * FEATURE: Warn about variables without default values and no parameter file provided
 
 ### 2.4.4
  * FIX: Duplicated MITRE subTechniques in rare cases
