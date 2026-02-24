@@ -148,8 +148,24 @@ This section allows you to use variable names in your original YAML file. They w
 
 All variables must be named using two percent sign at the beginning and the end e.g. `%%VARIABLENAME%%`.
 
+**Note:** Variable names cannot contain `:` (colon) or `%` (percent) characters to avoid syntax ambiguity.
+
+#### Variable Syntax
+
+Variables support an optional default value using the syntax `%%VARIABLENAME:DefaultValue%%`:
+
+* **Without default value**: `%%VARIABLENAME%%` - If no value is provided in the parameter file, the variable is replaced with an empty string
+* **With default value**: `%%VARIABLENAME:DefaultValue%%` - If no value is provided in the parameter file, the variable is replaced with `DefaultValue`
+
+#### Replacement Rules
+
 * String values are replaced as is.
 * Array values are joined together using `","` and a single `"` is added at the start and end. The resulting string is used to replace the variable.
+* If a variable is defined in the parameter file, it always takes precedence over the default value.
+* If a variable is not defined in the parameter file and has no default value, it is replaced with an empty string.
+* Default values can contain `%` characters, but variable names cannot.
+
+#### Example
 
 ```yaml
 ReplaceQueryVariables:
@@ -177,7 +193,47 @@ This way the following KQL query will be converted...
 | where NumberOfErrors > 200
 ```
 
+#### Default Values Example
+
+When using default values, you can have variables with fallback values that are used when no parameter file is provided or when a variable is not defined in the parameter file:
+
+```kql
+| where ErrorCount > %%ErrorThreshold:100%%
+| where ErrorCode in (%%ErrorCodes:500%%)
+| where Message contains "%%MessageFilter%%"
+| where Source == "%%Source:DefaultSource%%"
+```
+
+With the following parameter file:
+
+```yaml
+ReplaceQueryVariables:
+  ErrorThreshold: 50
+  ErrorCodes:
+    - 403
+    - 404
+```
+
+The query is converted to:
+
+```kql
+| where ErrorCount > 50
+| where ErrorCode in ("403","404")
+| where Message contains ""
+| where Source == "DefaultSource"
+```
+
+Notice that:
+* `ErrorThreshold` uses the value from the parameter file (`50`)
+* `ErrorCodes` uses the array from the parameter file (`"403","404"`)
+* `MessageFilter` has no default and no parameter value, so it becomes an empty string
+* `Source` has no parameter value, so it uses its default value (`DefaultSource`)
+
 ## Changelog
+
+### 2.5.0
+ * FEATURE: Add support for default values in variable replacement syntax `%%VARIABLENAME:DefaultValue%%`
+ * FEATURE: Warn about variables without default values and no parameter file provided
 
 ### 2.4.4
  * FIX: Duplicated MITRE subTechniques in rare cases
