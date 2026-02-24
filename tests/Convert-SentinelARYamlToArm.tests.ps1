@@ -21,6 +21,9 @@ param(
     [String]
     $exampleIncidentConfigurationMissingFilePath = "./tests/examples/IncidentConfigurationMissing.yaml",
     [Parameter()]
+    [String]
+    $exampleScheduledWithAlertDetailsOverrideFilePath = "./tests/examples/ScheduledWithAlertDetailsOverride.yaml",
+    [Parameter()]
     [Switch]
     $RetainTestFiles = $false
 )
@@ -260,6 +263,63 @@ Describe "Convert-SentinelARYamlToArm" {
 
         It "Should have the prefix at the start of the displayname" {
             $armTemplate.resources[0].properties.displayName | Should -Be "TestPrefix Azure WAF matching for Log4j vuln(CVE-2021-44228)"
+        }
+
+        It "Should not fail when alertDetailsOverride is not present" {
+            $armTemplate.resources[0].properties.alertDetailsOverride | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Scheduled with parameter NamePrefix and alertDetailsOverride" -Tag Integration {
+        BeforeAll {
+            Copy-Item -Path $exampleScheduledWithAlertDetailsOverrideFilePath -Destination "TestDrive:/ScheduledWithAlertDetailsOverride.yaml" -Force
+            $NamePrefix = "TestPrefix "
+            Convert-SentinelARYamlToArm -Filename "TestDrive:/ScheduledWithAlertDetailsOverride.yaml" -OutFile "TestDrive:/ScheduledWithAlertDetailsOverride.json" -NamePrefix $NamePrefix
+            $armTemplate = Get-Content -Path "TestDrive:/ScheduledWithAlertDetailsOverride.json" -Raw | ConvertFrom-Json
+        }
+
+        AfterEach {
+            if ( -not $RetainTestFiles) {
+                Remove-Item -Path "TestDrive:/*" -Include *.json -Force
+            }
+        }
+
+        It "Should have the prefix at the start of the displayName" {
+            $armTemplate.resources[0].properties.displayName | Should -Be "TestPrefix Azure WAF matching for Log4j vuln(CVE-2021-44228)"
+        }
+
+        It "Should have the prefix at the start of the alertDisplayNameFormat" {
+            $armTemplate.resources[0].properties.alertDetailsOverride.alertDisplayNameFormat | Should -Be "TestPrefix WAF Alert - {{MaliciousCommand}}"
+        }
+
+        It "Should have the prefix at the start of the alertDisplayNameFormat" {
+            $armTemplate.resources[0].properties.alertDetailsOverride.alertDisplayNameFormat | Should -Match "^TestPrefix "
+        }
+
+        It "Should not modify alertDescriptionFormat" {
+            $armTemplate.resources[0].properties.alertDetailsOverride.alertDescriptionFormat | Should -Be "A WAF rule was triggered by {{MaliciousHost}}"
+        }
+    }
+
+    Context "Scheduled without NamePrefix and with alertDetailsOverride" -Tag Integration {
+        BeforeAll {
+            Copy-Item -Path $exampleScheduledWithAlertDetailsOverrideFilePath -Destination "TestDrive:/ScheduledWithAlertDetailsOverride.yaml" -Force
+            Convert-SentinelARYamlToArm -Filename "TestDrive:/ScheduledWithAlertDetailsOverride.yaml" -OutFile "TestDrive:/ScheduledWithAlertDetailsOverride.json"
+            $armTemplate = Get-Content -Path "TestDrive:/ScheduledWithAlertDetailsOverride.json" -Raw | ConvertFrom-Json
+        }
+
+        AfterEach {
+            if ( -not $RetainTestFiles) {
+                Remove-Item -Path "TestDrive:/*" -Include *.json -Force
+            }
+        }
+
+        It "Should not modify alertDisplayNameFormat when NamePrefix is not set" {
+            $armTemplate.resources[0].properties.alertDetailsOverride.alertDisplayNameFormat | Should -Be "WAF Alert - {{MaliciousCommand}}"
+        }
+
+        It "Should not modify alertDescriptionFormat when NamePrefix is not set" {
+            $armTemplate.resources[0].properties.alertDetailsOverride.alertDescriptionFormat | Should -Be "A WAF rule was triggered by {{MaliciousHost}}"
         }
     }
 

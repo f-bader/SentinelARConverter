@@ -267,6 +267,10 @@ function Convert-SentinelARYamlToArm {
         # Add prefix to name if specified
         if ($NamePrefix) {
             $analyticRule.name = $NamePrefix + $analyticRule.name
+            # Also prefix alertDisplayNameFormat in alertDetailsOverride if present
+            if ($analyticRule.alertDetailsOverride -and $analyticRule.alertDetailsOverride.alertDisplayNameFormat) {
+                $analyticRule.alertDetailsOverride.alertDisplayNameFormat = $NamePrefix + $analyticRule.alertDetailsOverride.alertDisplayNameFormat
+            }
         }
 
         # Overwrite severity with custom severity
