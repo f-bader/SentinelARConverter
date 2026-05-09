@@ -1,0 +1,30 @@
+ReplaceQueryVariables:
+  # Single-element numeric list -> auto-quoted
+  SingleNumericList:
+    - 403
+  # Single-element string list with apostrophe -> auto-quoted, apostrophe preserved
+  SingleStringList:
+    - "Timothy O'Toole"
+  # Multi-element string list with apostrophes -> all auto-quoted, joined
+  MultiStringList:
+    - "Timothy O'Toole"
+    - "Mary O'Brien"
+    - "alice"
+  # Empty list -> single empty quoted string
+  EmptyList: []
+  # Workaround: literal double quotes embedded -> passed through unchanged
+  WorkaroundDoubleQuoted:
+    - '"403"'
+  # Workaround: literal single quotes embedded -> passed through unchanged
+  WorkaroundSingleQuoted:
+    - "'403'"
+  # Workaround: mix of pre-quoted and bare -> per-element handling
+  WorkaroundMixedQuoting:
+    - '"403"'
+    - "'404'"
+    - 405
+  # Scalar number -> emitted raw (preserves `> 250` for numeric comparison)
+  ScalarNumber: 250
+  # Scalar string with apostrophes -> emitted raw, KQL-safe inside double quotes
+  ScalarStringApostrophe: "Mary O'Brien's account"
+  # ScalarWithDefault NOT set in this file - rule's default ("DefaultSource") should be used
