@@ -1,0 +1,30 @@
+id: 6cc7b09a-9f70-4f49-9b4a-c0a18ce9b3e1
+name: Test Rule for ReplaceQueryVariables Substitution Patterns
+description: 'Covers scalar, single/multi-element list, empty list, apostrophe, and embedded-quote workaround patterns.'
+severity: Medium
+requiredDataConnectors: []
+queryFrequency: 1d
+queryPeriod: 1d
+triggerOperator: gt
+triggerThreshold: 0
+tactics:
+  - InitialAccess
+query: |
+  let SingleNumeric    = dynamic([%%SingleNumericList%%]);
+  let SingleString     = dynamic([%%SingleStringList%%]);
+  let MultiString      = dynamic([%%MultiStringList%%]);
+  let EmptyList        = dynamic([%%EmptyList%%]);
+  let WorkaroundDouble = dynamic([%%WorkaroundDoubleQuoted%%]);
+  let WorkaroundSingle = dynamic([%%WorkaroundSingleQuoted%%]);
+  let WorkaroundMixed  = dynamic([%%WorkaroundMixedQuoting%%]);
+  CommonSecurityLog
+  | where ErrorCount > %%ScalarNumber%%
+  | where Message contains "%%ScalarStringApostrophe%%"
+  | where Source == "%%ScalarWithDefault:DefaultSource%%"
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: HostName
+version: 1.0.0
+kind: Scheduled

@@ -624,6 +624,63 @@ Describe "Convert-SentinelARYamlToArm" {
         }
     }
 
+    Context "ReplaceQueryVariables substitution patterns" {
+        BeforeAll {
+            $exampleScheduledReplaceQueryVariablesFilePath = "./tests/examples/ScheduledReplaceQueryVariables.yaml"
+            $exampleScheduledReplaceQueryVariablesParameterFilePath = "./tests/examples/ScheduledReplaceQueryVariables.params.yaml"
+            Copy-Item -Path $exampleScheduledReplaceQueryVariablesFilePath -Destination "TestDrive:/ScheduledReplaceQueryVariables.yaml" -Force
+            Copy-Item -Path $exampleScheduledReplaceQueryVariablesParameterFilePath -Destination "TestDrive:/ScheduledReplaceQueryVariables.params.yaml" -Force
+            Convert-SentinelARYamlToArm -Filename "TestDrive:/ScheduledReplaceQueryVariables.yaml" -OutFile "TestDrive:/ScheduledReplaceQueryVariables.json" -ParameterFile "TestDrive:/ScheduledReplaceQueryVariables.params.yaml"
+            $armTemplate = Get-Content -Path "TestDrive:/ScheduledReplaceQueryVariables.json" -Raw | ConvertFrom-Json
+        }
+
+        AfterEach {
+            if ( -not $RetainTestFiles) {
+                Remove-Item -Path "TestDrive:/*" -Include *.json -Force
+            }
+        }
+
+        It "Should quote a single-element numeric list" {
+            $armTemplate.resources.properties.query | Should -Match 'SingleNumeric *= *dynamic\(\["403"\]\)'
+        }
+
+        It "Should quote a single-element string list and preserve apostrophes" {
+            $armTemplate.resources.properties.query | Should -Match 'SingleString *= *dynamic\(\["Timothy O''Toole"\]\)'
+        }
+
+        It "Should quote and join a multi-element string list and preserve apostrophes" {
+            $armTemplate.resources.properties.query | Should -Match 'MultiString *= *dynamic\(\["Timothy O''Toole","Mary O''Brien","alice"\]\)'
+        }
+
+        It "Should emit a single empty quoted string for an empty list" {
+            $armTemplate.resources.properties.query | Should -Match 'EmptyList *= *dynamic\(\[""\]\)'
+        }
+
+        It "Should pass through double-quote-wrapped elements (workaround compat)" {
+            $armTemplate.resources.properties.query | Should -Match 'WorkaroundDouble *= *dynamic\(\["403"\]\)'
+        }
+
+        It "Should pass through single-quote-wrapped elements (workaround compat)" {
+            $armTemplate.resources.properties.query | Should -Match 'WorkaroundSingle *= *dynamic\(\[''403''\]\)'
+        }
+
+        It "Should preserve pre-quoted elements and auto-quote bare elements per-element" {
+            $armTemplate.resources.properties.query | Should -Match 'WorkaroundMixed *= *dynamic\(\["403",''404'',"405"\]\)'
+        }
+
+        It "Should emit scalar number raw" {
+            $armTemplate.resources.properties.query | Should -Match 'ErrorCount > 250'
+        }
+
+        It "Should emit scalar string with apostrophes raw" {
+            $armTemplate.resources.properties.query | Should -Match 'Message contains "Mary O''Brien''s account"'
+        }
+
+        It "Should fall back to default value when scalar variable is not in parameter file" {
+            $armTemplate.resources.properties.query | Should -Match 'Source == "DefaultSource"'
+        }
+    }
+
     AfterAll {
         Remove-Module SentinelARConverter -Force
     }

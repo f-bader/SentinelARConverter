@@ -209,13 +209,27 @@ function Convert-SentinelARYamlToArm {
             #region Replace variables in KQL query with data from parameters file
             if ($Parameters.ReplaceQueryVariables) {
                 foreach ($Key in $Parameters.ReplaceQueryVariables.Keys) {
-                    if ($Parameters.ReplaceQueryVariables[$Key].Count -gt 1) {
-                        # Join array values with comma and wrap in quotes
-                        $ReplaceValue = $Parameters.ReplaceQueryVariables[$Key] -join '","'
-                        $ReplaceValue = '"' + $ReplaceValue + '"'
+                    $Value = $Parameters.ReplaceQueryVariables[$Key]
+                    # YAML sequences -> quoted, comma-joined CSV; scalars -> raw.
+                    # powershell-yaml returns sequences as Generic.List[Object] (IList, not [array]).
+                    if ($Value -is [System.Collections.IList] -and $Value -isnot [string]) {
+                        $QuotedElements = @(
+                            foreach ($Element in $Value) {
+                                $StringElement = [string]$Element
+                                # WORKAROUND COMPAT: rules written before this fix wrapped single-element
+                                # values as `- '"value"'` to force quoting (the old code only quoted lists
+                                # with 2+ elements). Pass those through so they don't become `""value""`.
+                                if ($StringElement -match '^(".*"|''.*'')$') {
+                                    $StringElement
+                                } else {
+                                    '"' + $StringElement + '"'
+                                }
+                            }
+                        )
+                        # Empty list -> `""` so `dynamic([%%X%%])` -> `dynamic([""])`, not invalid `dynamic([])`.
+                        $ReplaceValue = if ($QuotedElements.Count -eq 0) { '""' } else { $QuotedElements -join ',' }
                     } else {
-                        # Use single value
-                        $ReplaceValue = $Parameters.ReplaceQueryVariables[$Key]
+                        $ReplaceValue = $Value
                     }
                     Write-Verbose "Replacing variable %%$Key%% with $($ReplaceValue)"
                     # Replace both %%VAR%% and %%VAR:default%% patterns
