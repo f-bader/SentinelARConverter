@@ -624,6 +624,30 @@ Describe "Convert-SentinelARYamlToArm" {
         }
     }
 
+    Context "Scheduled with Windows event codes in the query" {
+        BeforeAll {
+            Copy-Item -Path "./tests/examples/ScheduledWithEventCodes.yaml" -Destination "TestDrive:/ScheduledWithEventCodes.yaml" -Force
+            $sourceQuery = (Get-Content -Path "./tests/examples/ScheduledWithEventCodes.yaml" -Raw | ConvertFrom-Yaml).query
+            $result = Convert-SentinelARYamlToArm -Filename "TestDrive:/ScheduledWithEventCodes.yaml" -OutFile "TestDrive:/ScheduledWithEventCodes.json" 3>&1
+            $warnings = $result | Where-Object { $_ -is [System.Management.Automation.WarningRecord] -and $_.Message -like "Variable '*" }
+            $armTemplate = Get-Content -Path "TestDrive:/ScheduledWithEventCodes.json" -Raw | ConvertFrom-Json
+        }
+
+        AfterAll {
+            if ( -not $RetainTestFiles) {
+                Remove-Item -Path "TestDrive:/*" -Include *.json -Force
+            }
+        }
+
+        It "Should keep the query apart from the replaced variable" {
+            $armTemplate.resources.properties.query | Should -BeExactly ($sourceQuery -replace '%%Threshold:5%%', '5')
+        }
+
+        It "Should not warn about event codes" {
+            $warnings | Should -BeNullOrEmpty
+        }
+    }
+
     AfterAll {
         Remove-Module SentinelARConverter -Force
     }
