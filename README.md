@@ -148,7 +148,7 @@ This section allows you to use variable names in your original YAML file. They w
 
 All variables must be named using two percent sign at the beginning and the end e.g. `%%VARIABLENAME%%`.
 
-**Note:** Variable names cannot contain `:` (colon) or `%` (percent) characters to avoid syntax ambiguity.
+**Note:** Variable names cannot contain `:` (colon) or `%` (percent) characters to avoid syntax ambiguity, and must start with a letter or `_`. Windows event codes such as `%%2089` are therefore left unchanged.
 
 #### Variable Syntax
 
@@ -230,6 +230,9 @@ Notice that:
 * `Source` has no parameter value, so it uses its default value (`DefaultSource`)
 
 ## Changelog
+
+### 2.5.1
+ * FIX: Windows event codes such as `%%2089` in a query are no longer treated as variables and removed
 
 ### 2.5.0
  * FEATURE: Add support for default values in variable replacement syntax `%%VARIABLENAME:DefaultValue%%`

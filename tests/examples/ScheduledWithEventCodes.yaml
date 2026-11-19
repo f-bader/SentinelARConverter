@@ -1,0 +1,30 @@
+id: 6f1f2b4e-3c1d-4a8e-9b2f-7d5c8e1a0b34
+name: Test Rule with Windows Event Codes
+description: |
+  'Test rule to verify Windows event codes are not treated as variables'
+severity: Medium
+requiredDataConnectors: []
+queryFrequency: 1d
+queryPeriod: 1d
+triggerOperator: gt
+triggerThreshold: 0
+tactics:
+  - Persistence
+query: |
+  SecurityEvent
+  | where EventID == 4738 and EventData has '2089'
+  | where UserAccountControl has "%%2089"
+  | extend Value_2089 = iff(UserAccountControl has "%%2089","'Don't Expire Password' - Enabled", "Not Changed")
+  | where EventID == '5145' and EventData has '%%4418'  and EventData has '583da945-62af-10e8-4902-a8f205c72b2e'
+  // %%4418 looks for presence of CreatePipeInstance value
+  | where AccessList has '%%4418'
+  | where Flags has "%%2089%%2090"
+  | extend Message = "%%1793: changed %%1794"
+  | where Count > %%Threshold:5%%
+entityMappings:
+  - entityType: Host
+    fieldMappings:
+      - identifier: HostName
+        columnName: Computer
+version: 1.0.0
+kind: Scheduled

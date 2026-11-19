@@ -236,23 +236,23 @@ function Convert-SentinelARYamlToArm {
         #endregion Parameter file handling
 
         # Replace remaining variables with their default values
-        # Regex pattern: %%([^%:]+?):((?:(?!%%).)*?)%%
+        # Regex pattern: %%([A-Za-z_][^%:]*?):((?:(?!%%).)*?)%%
         # Breakdown:
         #   %% - Opening delimiter
-        #   ([^%:]+?) - Capture group 1: Variable name (no % or : chars, non-greedy)
+        #   ([A-Za-z_][^%:]*?) - Capture group 1: Variable name (starts with a letter or _, no % or : chars, non-greedy), so Windows event codes such as %%2089 are left alone
         #   : - Separator between variable name and default value
         #   ((?:(?!%%).)*?) - Capture group 2: Default value (stops at %%, can contain single %)
         #     (?:(?!%%).)* - Match any character except the %% sequence using negative lookahead
         #   %% - Closing delimiter
         # Replacement: $2 (use the captured default value)
-        $analyticRule.query = [regex]::Replace($analyticRule.query, '%%([^%:]+?):((?:(?!%%).)*?)%%', '$2')
+        $analyticRule.query = [regex]::Replace($analyticRule.query, '%%([A-Za-z_][^%:]*?):((?:(?!%%).)*?)%%', '$2')
         
         # Warn about and replace remaining variables without defaults with empty string
-        $remainingVariables = [regex]::Matches($analyticRule.query, '%%([^%:]+?)%%')
+        $remainingVariables = [regex]::Matches($analyticRule.query, '%%([A-Za-z_][^%:]*?)%%')
         foreach ($match in $remainingVariables) {
             Write-Warning "Variable '$($match.Groups[1].Value)' has no default value and no parameter file was provided. Replacing with empty string."
         }
-        $analyticRule.query = $analyticRule.query -replace "%%[^%]+%%", ""
+        $analyticRule.query = $analyticRule.query -replace "%%[A-Za-z_][^%]*%%", ""
 
         if ( [string]::IsNullOrWhiteSpace($analyticRule.name) -or [string]::IsNullOrWhiteSpace($analyticRule.id) ) {
             throw "Analytics Rule name or id is empty. YAML might be corrupted"
